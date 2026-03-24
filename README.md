@@ -28,13 +28,9 @@
 - 위치 추적 및 과도한 민감 정보 수집 전면 배제
 - Device Token(UUID) 및 최소 식별 정보(Magic Link 등)만을 활용하여 철저한 익명성 보장
 
-### 4. 높은 접근성의 PWA 환경
-- 앱스토어를 통한 별도 설치 과정 없이, QR코드나 링크 클릭만으로 즉시 접근 가능한 **Progressive Web App** 적용
-- 지자체 및 복지기관의 하드웨어(IoT 센서 등) 도입/유지보수 예산 절감
-
-### 5. 모바일 하이브리드 앱 배포 (Google Play Store)
-- 단순 학술적 프로토타입에 그치지 않고, 실제 1인 가구 사용자가 손쉽게 접근할 수 있도록 구글 플레이 스토어 정식 출시를 목표로 개발
-- React 기반의 웹 기술을 Capacitor/WebView로 패키징하여, 빠른 업데이트와 안정적인 네이티브 기능(FCM 푸시 알림 등)을 동시에 확보
+### 4. 투트랙(Two-Track) 접근성 및 배포 전략
+- Web (PWA): 앱 설치에 거부감이 있는 고령층을 위해 QR코드/링크 클릭만으로 즉시 접근 가능한 무설치 PWA 환경 제공
+- App (하이브리드): 100% 수신이 보장되어야 하는 '골든타임 푸시 알림(FCM)'의 안정성을 확보하고, 실제 시장 런칭을 위해 구글 플레이 스토어(Capacitor/WebView 기반) 정식 출시 병행
 
 <br>
 
@@ -52,6 +48,7 @@
 - **Architecture**: Progressive Web App (PWA)
 - **State Management**: Zustand (오프라인 상태 대응)
 - **Design**: 모바일 친화적 파스텔톤 UI
+- **Hybrid App**: Capacitor (또는 React Native WebView)
 
 ### Backend
 - **Framework**: Spring Boot 3.x
@@ -65,7 +62,7 @@
 ## 👨‍💻 팀원 및 역할 분담 (R&R)
 | 이름 | 역할 | 주요 수행 내용 |
 |:---:|:---:|---|
-| **권영훈**<br>(팀장) | PM & PO | - 프로젝트 비전 수립 및 애자일(Agile) 스프린트 관리<br>- 사용자 모드(Easy/Normal) UX 시나리오 설계<br>- 카나리아 미션 및 게이미피케이션 기획 |
+| **권영훈**<br>(팀장) | PM & PO & UI/UX | - 프로젝트 비전 수립 및 애자일(Agile) 스프린트 관리<br>- 사용자 모드(Easy/Normal) UX 시나리오 설계<br>- 카나리아 미션 및 게이미피케이션 기획 |
 | **이호준** | Architect & DevOps | - 전체 시스템 아키텍처 및 통합 프로세스 설계<br>- 클라우드 배포(CI/CD) 및 서버 보안 취약점 점검<br>- Device Token 기반 인증 및 알림 인터페이스 설계 |
 | **강신혁** | Backend Engineer | - Spring Boot 기반 RESTful API 비즈니스 로직 설계<br>- `@Scheduled` 활용 골든타임 감지 코어 알고리즘 개발<br>- JPA 활용 활동 로그 관리 및 대용량 쿼리 튜닝 |
 | **하유빈** | Frontend Engineer | - React/Vite 기반 모바일 친화적 UI 컴포넌트 개발<br>- 앱 설치 허들을 낮추는 PWA 환경 구축<br>- Zustand 활용 상태 관리 및 파스텔톤 디자인 설계 |
