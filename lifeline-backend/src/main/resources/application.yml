@@ -1,0 +1,8 @@
+jwt:
+  secret-key: najungaebaqquela
+  access-token-expiration: 3600000 # 1시간 (밀리초)
+  refresh-token-expiration: 1209600000 # 14일 (밀리초)
+
+spring:
+  application:
+    name: lifeline-backend
