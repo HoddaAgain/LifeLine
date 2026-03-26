@@ -53,4 +53,24 @@ public class JwtUtil {
                 .signWith(key, SignatureAlgorithm.HS256) // 암호화 알고리즘 적용
                 .compact();
     }
+
+    // 1. 토큰에서 유저 아이디 꺼내기
+    public String getLoginIdFromToken(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
+    }
+
+    // 2. 토큰이 유효한지 검사
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }
