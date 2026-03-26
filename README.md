@@ -34,10 +34,10 @@
 <br>
 
 ## ⚙️ 시스템 아키텍처 및 기술 최적화 (Architecture & Optimization)
-### 무중단 위기 감지 스케줄러 파이프라인
+### **무중단 위기 감지 스케줄러 파이프라인**
 <img width="1773" height="522" alt="Image" src="https://github.com/user-attachments/assets/0f48488d-454c-4997-8b41-ac0ad78ed86e" />
 
-### JPA 복합 인덱스(Composite Index) 튜닝
+### **JPA 복합 인덱스(Composite Index) 튜닝**
 
 • **문제**: 매분 1만 명 이상의 유저 활동 로그를 스캔하는 스케줄러 로직상, 단순 풀스캔(Full-Scan) 발생 시 서버 CPU 과부하 및 DB 성능 저하 우려. <br>
 • **해결**: `alert_status(경고 발송 여부)`와 `last_survival_time(마지막 접속 시간)`을 묶어 **복합 인덱스**로 설정. <br>
