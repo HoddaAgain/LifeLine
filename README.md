@@ -1,7 +1,7 @@
 # LifeLine 🐤: 1인 가구를 위한 골든타임 확보 및 안전망 구축 플랫폼
 
 > **단순한 '사망 방지'를 넘어, '정서적 유대감'을 형성하는 1인 가구 골든타임 확보 플랫폼** <br>
-> 2026학년도 동의대학교 응용소프트웨어공학과 4학년 1학기 캡스톤 디자인II  (팀명: 호따 - Hodda)
+> 2026학년도 동의대학교 응용소프트웨어공학과 4학년 1학기 캡스톤 디자인II (팀명: 호따 - Hodda)
 
 <br>
 
@@ -17,7 +17,7 @@
 
 ### 1. 세대별 맞춤형 이중 인터페이스 (Dual-Mode UI)
 - **Easy Mode (고령층 대상)**: 스마트 기기 조작이 서툰 사용자를 위해 직관적이고 거대한 단일 버튼 형태의 UI 제공
-- **Normal Mode (청·장년층 대상)**: 일기 작성 및 '카나리아 미션' 등 게이미피케이션(Gamification) 요소를 결합하여 자발적 참여 동기 부여
+- **Normal Mode (청·장년층 대상)**: '하루 일기 작성' 및 '카나리아 미션' 등 **게이미피케이션(Gamification)** 요소를 결합하여 자발적 참여 동기 부여
 
 ### 2. 골든타임 확보를 위한 백그라운드 스케줄링
 - 사용자의 활동 로그를 기반으로 24시간/48시간 미활동 시 사용자에게 경고(Warning) 알림 발생
@@ -29,19 +29,38 @@
 
 ### 4. 투트랙(Two-Track) 접근성 및 배포 전략
 - **Web (PWA)**: 앱 설치에 거부감이 있는 고령층을 위해 QR코드/링크 클릭만으로 즉시 접근 가능한 무설치 PWA 환경 제공
-- **App (하이브리드)**: 100% 수신이 보장되어야 하는 '골든타임 푸시 알림(FCM)'의 안정성을 확보하고, 실제 시장 런칭을 위해 구글 플레이 스토어(Capacitor/WebView 기반) 정식 출시 병행
+- **App (하이브리드)**: 100% 수신이 보장되어야 하는 **'골든타임 푸시 알림(FCM)'** 의 안정성을 확보하고, 실제 시장 런칭을 위해 구글 플레이 스토어(Capacitor/WebView 기반) 정식 출시 병행
 
 <br>
 
-## 🚀 배포 및 런칭 로드맵 (Roadmap)
-- **MVP 개발**: 핵심 로직(생존 스케줄러, 일기장) 검증 및 PWA 테스트 배포
-- **하이브리드 패키징**: 네이티브 기능(FCM 푸시, 로컬 캐시) 연동 및 구글 플레이 콘솔 등록
-- **마켓 런칭 및 운영**: 구글 플레이 스토어 정식 출시, 초기 유저 피드백 수집 및 버그 픽스
+## ⚙️ 시스템 아키텍처 및 기술 최적화 (Architecture & Optimization)
+### 💡 무중단 위기 감지 스케줄러 파이프라인
+<img width="1773" height="522" alt="Image" src="https://github.com/user-attachments/assets/0f48488d-454c-4997-8b41-ac0ad78ed86e" />
+
+### - 파이프라인 동작 프로세스 <br>
+• **Trigger (능동적 체크인):** 사용자가 앱 내에서 생존 신고 버튼(이지 모드)을 누르거나 카나리아 미션 수행 및 하루 일기(노말 모드)를 작성하면, 해당 시점이 API를 통해 DB의 last_survival_time으로 갱신됩니다. <br>
+• **Background Scan (@Scheduled):** Spring Boot 백엔드에 내장된 이벤트 스케줄러가 설정된 주기(예: 매분)마다 DB를 스캔합니다. 이때 JPA 복합 인덱스를 타게 되어 서버 부하 없이 대상자만 빠르게 필터링합니다. <br>
+• **Action (조건별 알림 분기):** <br>
+- 24시간 미활동: 사용자 본인의 디바이스로 1차 경고(Warning) 푸시 알림을 발송하여 체크인을 유도합니다. <br>
+- 48시간 미활동: 1차 경고 후에도 반응이 없을 경우 골든타임 위험으로 간주하고, 사전에 등록된 비상 연락망(가족, 복지기관)으로 즉시 긴급 알림(Email/SMS)을 발송합니다. <br>
+
+### 💡 JPA 복합 인덱스(Composite Index) 튜닝
+
+• **문제**: 매분 1만 명 이상의 유저 활동 로그를 스캔하는 스케줄러 로직상, 단순 풀스캔(Full-Scan) 발생 시 서버 CPU 과부하 및 DB 성능 저하 우려. <br>
+• **해결**: `alert_status(경고 발송 여부)`와 `last_survival_time(마지막 접속 시간)`을 묶어 **복합 인덱스**로 설정. <br>
+• **B-Tree 구조 최적화**: 범위 조건(Range)인 시간보다 동등 조건(=)인 발송 여부를 선행 컬럼으로 배치(`@Index(columnList = "alert_status, last_survival_time")`)하여 랜덤 액세스를 0에 가깝게 줄이고 조회 속도를 극대화함.
+
+<br>
+
+### 🚀 배포 및 런칭 로드맵 (Roadmap)
+
+• **MVP 개발**: 핵심 로직(생존 스케줄러, 일기장) 검증 및 PWA 테스트 배포 <br>
+• **하이브리드 패키징**: 네이티브 기능(FCM 푸시, 로컬 캐시) 연동 및 구글 플레이 콘솔 등록 <br>
+• **마켓 런칭 및 운영**: 구글 플레이 스토어 정식 출시, 초기 유저 피드백 수집 및 버그 픽스 <br>
 
 <br>
 
 ## 🛠 기술 스택 (Tech Stack)
-
 ### Frontend
 - **Framework**: React 19, Vite
 - **Architecture**: Progressive Web App (PWA)
@@ -51,7 +70,7 @@
 
 ### Backend
 - **Framework**: Spring Boot 3.x
-- **Database**: MySQL / MariaDB
+- **Database**: MySQL 
 - **ORM & Optimization**: Spring Data JPA (인덱스 기반 쿼리 최적화)
 - **Task Scheduling**: Spring `@Scheduled` (24h/48h 감지 코어)
 - **Notification**: JavaMailSender (DI 기반 알림 인터페이스)
@@ -62,9 +81,9 @@
 | 이름 | 역할 | 주요 수행 내용 |
 |:---:|:---:|---|
 | **권영훈**<br>(팀장) | PM & PO & UI/UX | - 프로젝트 비전 수립 및 애자일(Agile) 스프린트 관리<br>- 사용자 모드(Easy/Normal) UX 시나리오 설계<br>- 카나리아 미션 및 게이미피케이션 기획 |
-| **이호준** | Architect & DevOps | - 전체 시스템 아키텍처 및 통합 프로세스 설계<br>- 클라우드 배포(CI/CD) 및 서버 보안 취약점 점검<br>- Device Token 기반 인증 및 알림 인터페이스 설계 |
-| **강신혁** | Backend Engineer | - Spring Boot 기반 RESTful API 비즈니스 로직 설계<br>- `@Scheduled` 활용 골든타임 감지 코어 알고리즘 개발<br>- JPA 활용 활동 로그 관리 및 대용량 쿼리 튜닝 |
-| **하유빈** | Frontend Engineer | - React/Vite 기반 모바일 친화적 UI 컴포넌트 개발<br>- 앱 설치 허들을 낮추는 PWA 환경 구축<br>- Zustand 활용 상태 관리 및 파스텔톤 디자인 설계 |
+| **이호준** | CTO & Architect | - 전체 시스템 아키텍처 및 통합 프로세스 설계<br>- 클라우드 배포(CI/CD) 및 서버 보안 취약점 점검<br>- Device Token 기반 인증 및 알림 인터페이스 설계 |
+| **강신혁** | Backend Developer | - Spring Boot 기반 RESTful API 비즈니스 로직 설계<br>- `@Scheduled` 활용 골든타임 감지 코어 알고리즘 개발<br>- JPA 활용 활동 로그 관리 및 대용량 쿼리 튜닝 |
+| **하유빈** | Frontend developer | - React/Vite 기반 모바일 친화적 UI 컴포넌트 개발<br>- 앱 설치 허들을 낮추는 PWA 환경 구축<br>- Zustand 활용 상태 관리 및 파스텔톤 디자인 설계 |
 
 <br>
 
