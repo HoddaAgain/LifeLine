@@ -4,3 +4,6 @@ lifeline-backend/.gradle/9.4.0/checksums/checksums.lock
 *.bin
 *.lock
 lifeline-backend/.gradle/9.4.0/checksums/checksums.lock
+*.probe
+*.bin
+*.class
