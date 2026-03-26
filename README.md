@@ -35,14 +35,7 @@
 
 ## ⚙️ 시스템 아키텍처 및 기술 최적화 (Architecture & Optimization)
 ### 무중단 위기 감지 스케줄러 파이프라인
-
-mermaid <br>
-flowchart LR <br>
-    A[사용자 Active Check-in] --> B[Spring Boot API] 
-    B --> C[(MySQL DB)]
-    C -->|B-Tree Index Scan| D{Scheduler} 
-    D -->|24h 경과| E[FCM 푸시 알림] 
-    D -->|48h 경과| F[긴급 비상 연락망]
+<img width="1773" height="522" alt="Image" src="https://github.com/user-attachments/assets/0f48488d-454c-4997-8b41-ac0ad78ed86e" />
 
 ### JPA 복합 인덱스(Composite Index) 튜닝
 
