@@ -1,7 +1,7 @@
 # LifeLine 🐤: 1인 가구를 위한 골든타임 확보 및 안전망 구축 플랫폼
 
 > **단순한 '사망 방지'를 넘어, '정서적 유대감'을 형성하는 1인 가구 골든타임 확보 플랫폼** <br>
-> 2026학년도 동의대학교 응용소프트웨어공학과 4학년 1학기 캡스톤 디자인II  (팀명: 호따 - Hodda)
+> 2026학년도 동의대학교 응용소프트웨어공학과 4학년 1학기 캡스톤 디자인II (팀명: 호따 - Hodda)
 
 <br>
 
@@ -33,15 +33,34 @@
 
 <br>
 
-## 🚀 배포 및 런칭 로드맵 (Roadmap)
-- **MVP 개발**: 핵심 로직(생존 스케줄러, 일기장) 검증 및 PWA 테스트 배포
-- **하이브리드 패키징**: 네이티브 기능(FCM 푸시, 로컬 캐시) 연동 및 구글 플레이 콘솔 등록
-- **마켓 런칭 및 운영**: 구글 플레이 스토어 정식 출시, 초기 유저 피드백 수집 및 버그 픽스
+## ⚙️ 시스템 아키텍처 및 기술 최적화 (Architecture & Optimization)
+### 무중단 위기 감지 스케줄러 파이프라인
+
+mermaid <br>
+flowchart LR <br>
+    A[사용자 Active Check-in] --> B[Spring Boot API] 
+    B --> C[(MySQL DB)]
+    C -->|B-Tree Index Scan| D{Scheduler} 
+    D -->|24h 경과| E[FCM 푸시 알림] 
+    D -->|48h 경과| F[긴급 비상 연락망]
+
+### JPA 복합 인덱스(Composite Index) 튜닝
+
+• **문제**: 매분 1만 명 이상의 유저 활동 로그를 스캔하는 스케줄러 로직상, 단순 풀스캔(Full-Scan) 발생 시 서버 CPU 과부하 및 DB 성능 저하 우려. <br>
+• **해결**: `alert_status(경고 발송 여부)`와 `last_survival_time(마지막 접속 시간)`을 묶어 **복합 인덱스**로 설정. <br>
+• **B-Tree 구조 최적화**: 범위 조건(Range)인 시간보다 동등 조건(=)인 발송 여부를 선행 컬럼으로 배치(`@Index(columnList = "alert_status, last_survival_time")`)하여 랜덤 액세스를 0에 가깝게 줄이고 조회 속도를 극대화함.
+
+<br>
+
+### 🚀 배포 및 런칭 로드맵 (Roadmap)
+
+• **MVP 개발**: 핵심 로직(생존 스케줄러, 일기장) 검증 및 PWA 테스트 배포
+• **하이브리드 패키징**: 네이티브 기능(FCM 푸시, 로컬 캐시) 연동 및 구글 플레이 콘솔 등록
+• **마켓 런칭 및 운영**: 구글 플레이 스토어 정식 출시, 초기 유저 피드백 수집 및 버그 픽스
 
 <br>
 
 ## 🛠 기술 스택 (Tech Stack)
-
 ### Frontend
 - **Framework**: React 19, Vite
 - **Architecture**: Progressive Web App (PWA)
@@ -51,7 +70,7 @@
 
 ### Backend
 - **Framework**: Spring Boot 3.x
-- **Database**: MySQL / MariaDB
+- **Database**: MySQL 
 - **ORM & Optimization**: Spring Data JPA (인덱스 기반 쿼리 최적화)
 - **Task Scheduling**: Spring `@Scheduled` (24h/48h 감지 코어)
 - **Notification**: JavaMailSender (DI 기반 알림 인터페이스)
