@@ -19,9 +19,9 @@ public class AuthController {
     private final AuthService authService;
 
     //회원가입
-    @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<Void>> signup(@Valid @RequestBody AuthDto.SignUpRequest request) {
-        authService.signup(request);
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<Void>> register(@Valid @RequestBody AuthDto.RegisterRequest request) {
+        authService.register(request);
         return ResponseEntity.ok(ApiResponse.success("회원가입이 완료되었습니다.", null));
     }
 

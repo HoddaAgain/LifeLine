@@ -12,7 +12,7 @@ public class AuthDto {
     // 1. 회원가입 요청 DTO (AuthDto.SignUpRequest)
     @Getter
     @NoArgsConstructor
-    public static class SignUpRequest {
+    public static class RegisterRequest {
         @NotBlank(message = "아이디는 필수입니다.")
         private String userId;
 

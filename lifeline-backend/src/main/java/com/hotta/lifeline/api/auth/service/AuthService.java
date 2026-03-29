@@ -21,7 +21,7 @@ public class AuthService {
 
     // 회원가입 로직
     @Transactional
-    public void signup(AuthDto.SignUpRequest request) {
+    public void register(AuthDto.RegisterRequest request) {
         // 1. 아이디 중복 체크
         if (userRepository.existsByLoginId(request.getUserId())) {
             throw new CustomException(ErrorCode.DUPLICATE_LOGIN_ID);

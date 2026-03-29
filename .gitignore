@@ -7,3 +7,8 @@ lifeline-backend/.gradle/9.4.0/checksums/checksums.lock
 *.probe
 *.bin
 *.class
+**/.idea/
+**/.gradle/
+**/build/
+.idea/LifeLine.iml
+*.iml
