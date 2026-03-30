@@ -1,16 +1,15 @@
 package com.hotta.lifeline.domain.user;
 
+import com.hotta.lifeline.domain.survival.Survival;
 import com.hotta.lifeline.global.entity.BaseTimeEntity;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
+@Setter
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "users")
@@ -38,15 +37,15 @@ public class User extends BaseTimeEntity {
     private LocalDate birthDate;
 
     // 동기부여 및 상태 체크용 필드
-    @Column(nullable = false)
-    private Integer survivalStreak = 0;
 
     @Column(nullable = false)
     private Integer diaryStreak = 0;
 
-    private LocalDateTime lastSurvivalTime;
-
     private LocalDate lastDiaryDate;
+
+    //survival 테이블이랑 양뱡향 조인
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Survival survival;
 
     @Builder
     public User(String loginId, String password, String name, String mode, String emergencyContact, LocalDate birthDate) {
@@ -56,12 +55,6 @@ public class User extends BaseTimeEntity {
         this.mode = mode;
         this.emergencyContact = emergencyContact;
         this.birthDate = birthDate;
-    }
-
-    // [비즈니스 로직] 생존신고 출석 처리
-    public void checkInSurvival() {
-        this.lastSurvivalTime = LocalDateTime.now();
-        this.survivalStreak += 1;
     }
 
     // [비즈니스 로직] 일기 작성 시 연속일 처리

@@ -1,6 +1,7 @@
 package com.hotta.lifeline.api.auth.service;
 
 import com.hotta.lifeline.api.auth.dto.AuthDto;
+import com.hotta.lifeline.domain.survival.Survival;
 import com.hotta.lifeline.domain.user.User;
 import com.hotta.lifeline.domain.user.UserRepository;
 import com.hotta.lifeline.global.config.JwtUtil;
@@ -36,6 +37,13 @@ public class AuthService {
                 .emergencyContact(request.getEmergencyContact())
                 .birthDate(request.getBirthDate())
                 .build();
+
+        // 2-2. User 객체 생성
+        Survival survival = Survival.builder()
+                .user(user)
+                .build();
+
+        user.setSurvival(survival);
 
         // 3. DB에 저장
         userRepository.save(user);
