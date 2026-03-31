@@ -45,7 +45,6 @@ public class AuthService {
 
         user.setSurvival(survival);
 
-        // 3. DB에 저장
         userRepository.save(user);
     }
 

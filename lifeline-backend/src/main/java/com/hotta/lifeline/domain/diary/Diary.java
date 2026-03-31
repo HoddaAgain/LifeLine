@@ -36,26 +36,24 @@ public class Diary extends BaseTimeEntity {
     @Column(nullable = false)
     private LocalDate diaryDate;
 
-    // 카나리아 미션 확장을 대비한 카테고리 (일기, 물마시기, 산책 등)
-    //@Column(nullable = false)
-    //private String category; // "DIARY", "WATER", "WALK" 등
-
-    @OneToMany(mappedBy = "diary", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<DiaryImage> images = new ArrayList<>();
+    private String imageUrl; // S3 등에 저장된 이미지 URL
 
     @Builder
-    public Diary(User user, String title, String content, String mood, LocalDate diaryDate, String category) {
+    public Diary(User user, String title, String content, String mood, LocalDate diaryDate, String imageUrl) {
         this.user = user;
         this.title = title;
         this.content = content;
         this.mood = mood;
         this.diaryDate = diaryDate;
-        //this.category = (category != null) ? category : "DIARY"; // 기본값은 일반 일기
+        this.imageUrl = imageUrl;
     }
 
-    // 연관관계 편의 메서드 (일기에 이미지를 추가할 때 양쪽 객체에 모두 세팅)
-    public void addImage(DiaryImage image) {
-        this.images.add(image);
-        image.assignDiary(this);
+    // 더티 체킹(Dirty Checking)을 이용한 업데이트 편의 메서드
+    public void update(String title, String content, String mood, String imageUrl, LocalDate diaryDate) {
+        this.title = title;
+        this.content = content;
+        this.mood = mood;
+        this.imageUrl = imageUrl;
+        this.diaryDate = diaryDate;
     }
 }
