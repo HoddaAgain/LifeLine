@@ -1,7 +1,7 @@
 // src/App.tsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import MainPage from './pages/Mainpageex1';
+import MainPage from './pages/Mainpage';
 import AuthPage from './auth/Authpage';
 import { useUserStore } from './store/useUserStore';
 import DashboardPage from './pages/DashboardPage';
