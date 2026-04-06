@@ -92,7 +92,7 @@ const MainPage: React.FC = () => {
           </motion.p>
 
           <div className="flex gap-6 justify-center">
-            {isLoggedIn ? (
+           {/* {isLoggedIn ? (
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -101,7 +101,7 @@ const MainPage: React.FC = () => {
               >
                 대시보드로 가기
               </motion.button>
-            ) : (
+            ) : (*/}
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -110,7 +110,7 @@ const MainPage: React.FC = () => {
               >
                 지금 시작하기
               </motion.button>
-            )}
+            
           </div>
         </div>
       </main>
@@ -138,3 +138,4 @@ const MainPage: React.FC = () => {
 };
 
 export default MainPage;
+//미완성

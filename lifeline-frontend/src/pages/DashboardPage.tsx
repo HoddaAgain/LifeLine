@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import {useUserStore} from '../store/useUserStore'; // 스토어 경로 확인 필요
+import {useUserStore} from '../store/useUserStore';
 import api from '../api/axios'; // axios 인스턴스
 import { diaryApi } from '../api/diarys'; // 일기 API
 import { type Diary } from '../types'; // 공통 타입
@@ -78,7 +78,7 @@ const DashboardPage: React.FC = () => {
     navigate('/');
   };
 
-  // 5. 일기 저장 로직 (diaryApi 연동)
+  //  일기 저장 로직 
   const handleSaveDiary = async () => {
     if (!newDiary.title.trim() || !newDiary.content.trim()) {
       return showToast('제목과 내용을 모두 입력해주세요!', 'error');
@@ -99,7 +99,7 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  // 6. 일기 삭제 로직 (diaryApi 연동)
+  //  일기 삭제 로직 
   const handleDeleteDiary = async (id: number) => {
     try {
       await diaryApi.deleteDiary(id);
@@ -337,7 +337,7 @@ const DashboardPage: React.FC = () => {
         </div>
       </aside>
 
-      {/* 일기 작성 모달 */}
+      {/* 일기 작성  */}
       <AnimatePresence>
         {isWriting && (
           <>
@@ -366,7 +366,7 @@ const DashboardPage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* 일기 상세보기 모달 */}
+      {/* 일기 상세보기  */}
       <AnimatePresence>
         {selectedDiary && (
           <>
@@ -414,7 +414,7 @@ const DashboardPage: React.FC = () => {
   );
 };
 
-// --- 서브 컴포넌트 ---
+
 const SidebarItem = ({ icon, label, active = false, onClick, disabled = false }: any) => (
   <button 
     onClick={onClick} 
