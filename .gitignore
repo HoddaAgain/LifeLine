@@ -12,3 +12,4 @@ lifeline-backend/.gradle/9.4.0/checksums/checksums.lock
 **/build/
 .idea/LifeLine.iml
 *.iml
+*.svg

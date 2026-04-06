@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: lifeline-backend
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL # MySQL 문법과 호환되도록 설정
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create # 서버가 켜질 때마다 우리가 만든 Entity를 보고 테이블을 새로 만들어줌 (개발용)
+    show-sql: true     # 콘솔에 쿼리문 보여주기
+    properties:
+      hibernate:
+        format_sql: true # 쿼리문을 예쁘게 정렬해서 보여주기
+  h2:
+    console:
+      enabled: true    # 브라우저에서 DB 안을 들여다볼 수 있게 해줌 (localhost:8080/h2-console)
+      path: /h2-console
+
+
+
+jwt:
+  secret-key: aG90dGEtbGlmZWxpbmUtY2Fwc3RvbmUtcHJvamVjdC1zZWNyZXQta2V5LW11c3QtYmUtdmVyeS1sb25n # 이거 나중에 바꿀거임. 임시로 이래해놓음
+  access-token-expiration: 3600000 # 1시간 (밀리초)
+  refresh-token-expiration: 1209600000 # 14일 (밀리초)

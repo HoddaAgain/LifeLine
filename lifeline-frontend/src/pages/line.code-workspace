@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../../../../../line"
+		},
+		{
+			"name": "LifeLine",
+			"path": "../../.."
+		}
+	],
+	"settings": {
+		"java.compile.nullAnalysis.mode": "automatic"
+	}
+}
