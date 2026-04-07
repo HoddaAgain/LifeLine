@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import {useUserStore} from '../store/useUserStore';
-import api from '../api/axios'; // axios 인스턴스
-import { diaryApi } from '../api/diarys'; // 일기 API
-import { type Diary } from '../types'; // 공통 타입
+import { useUserStore } from '../store/useUserStore';
+import api from '../api/axios'; 
+import { type Diary } from '../types';
 
 interface Toast {
   id: number;
@@ -15,44 +14,62 @@ interface Toast {
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   
-  const { user, setLogout, setUser } = useUserStore() as any; 
-  const isEasyMode = user?.mode === 'EASY';
   
+  const { user, setLogout, setUser, isLoggedIn } = useUserStore(); 
+  const isEasyMode = user?.mode === 'EASY';
+
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'main' | 'diary' | 'settings' | 'profile'>('main');
   const [toasts, setToasts] = useState<Toast[]>([]);
-  
-  
-  const [diaries, setDiaries] = useState<Diary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+ 
+  const [diaries, setDiaries] = useState<Diary[]>([]);
   const [isWriting, setIsWriting] = useState(false); 
   const [selectedDiary, setSelectedDiary] = useState<Diary | null>(null); 
   const [newDiary, setNewDiary] = useState({ title: '', content: '', mood: '😊' }); 
-  
   const [isDeleteConfirm, setIsDeleteConfirm] = useState(false);
   const [hasCheckedIn, setHasCheckedIn] = useState(false);
 
-
+ //데이터로딩 
   useEffect(() => {
     const fetchData = async () => {
+      // 로그인이 안 되어 있거나 유저 정보가 없으면 로딩 중단
+      if (!isLoggedIn) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        const [userRes, diaryRes] = await Promise.all([
-          api.get('/api/auth/me'),
-          diaryApi.getDiaries()
-        ]);
-        if (setUser) setUser(userRes.data);
-        setDiaries(diaryRes.data);
-      } catch (error) {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1;
+
+       //일기목록 호출
+        const diaryRes = await api.get(`/api/diaries?year=${year}&month=${month}`);
+
+        
+        if (diaryRes.data.status === "SUCCESS") {
+          setDiaries(diaryRes.data.data || []);
+        } else {
+          showToast(diaryRes.data.message, 'error');
+        }
+      } catch (error: any) {
         console.error("데이터 로딩 실패:", error);
+        // 401이나 403 에러 발생 시 세션 만료 처리
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          handleLogout();
+        }
+        showToast('데이터를 불러오는데 실패했습니다.', 'error');
       } finally {
         setIsLoading(false);
       }
     };
-    fetchData();
-  }, [setUser]);
 
-  // 커스텀 알림 
+    fetchData();
+  }, [isLoggedIn]); // isLoggedIn 상태가 변할 때마다 실행
+
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     const id = Date.now();
     setToasts((prev) => [...prev, { id, message, type }]);
@@ -61,13 +78,28 @@ const DashboardPage: React.FC = () => {
     }, 3000);
   };
 
- 
+  // 생존신고 로직
+  const handleCheckIn = async () => {
+    try {
+      const res = await api.post('/api/survival/checkin');
+      if (res.data.status === "SUCCESS") {
+        setHasCheckedIn(true);
+        showToast('출석 완료! 오늘 하루도 안전하게. ✨', 'success');
+      }
+    } catch (error) {
+      showToast('출석 체크에 실패했습니다.', 'error');
+    }
+  };
+
+  // 모드변경 로직
   const handleChangeMode = async (newMode: 'EASY' | 'NORMAL') => {
     try {
-      await api.patch('/api/auth/mode', { mode: newMode });
-      if (setUser) setUser({ ...user, mode: newMode });
-      showToast(`${newMode === 'EASY' ? '이지' : '노멀'} 모드로 변경되었습니다!`, 'success');
-      setActiveTab('main');
+      const res = await api.patch('/api/survival/auto-check', { isAutoCheckEnabled: newMode === 'EASY' });
+      if (res.data.status === "SUCCESS") {
+        if (setUser && user) setUser({ ...user, mode: newMode });
+        showToast(`${newMode === 'EASY' ? '이지' : '노멀'} 모드로 변경되었습니다!`, 'success');
+        setActiveTab('main');
+      }
     } catch (error) {
       showToast('모드 변경에 실패했습니다.', 'error');
     }
@@ -78,46 +110,75 @@ const DashboardPage: React.FC = () => {
     navigate('/');
   };
 
-  //  일기 저장 로직 
+  //일기저장 로직
   const handleSaveDiary = async () => {
     if (!newDiary.title.trim() || !newDiary.content.trim()) {
       return showToast('제목과 내용을 모두 입력해주세요!', 'error');
     }
     
     try {
-      const res = await diaryApi.createDiary({
-        ...newDiary,
-        createdAt: new Date().toISOString().split('T')[0] 
-      });
+      const payload = {
+        title: newDiary.title,
+        content: newDiary.content,
+        mood: newDiary.mood,
+        diaryDate: new Date().toISOString().split('T')[0], // camelCase 유지
+        imageUrl: "" 
+      };
+
+      const res = await api.post('/api/diaries', payload);
       
-      setDiaries([res.data, ...diaries]);
-      setIsWriting(false);
-      setNewDiary({ title: '', content: '', mood: '😊' });
-      showToast('오늘의 기록이 저장되었습니다! ✨', 'success');
+      if (res.data.status === "SUCCESS") {
+        // 방금 저장한 일기를 목록 맨 앞에 추가
+        const savedDiary = res.data.data;
+        setDiaries([savedDiary, ...diaries]);
+        setIsWriting(false);
+        setNewDiary({ title: '', content: '', mood: '😊' });
+        showToast('오늘의 기록이 저장되었습니다! 📖', 'success');
+      }
     } catch (error) {
       showToast('저장에 실패했습니다.', 'error');
     }
   };
 
-  //  일기 삭제 로직 
+  //일기 조회
+  const handleReadDiary = async (id: number) => {
+    try {
+      const res = await api.get(`/api/diaries/${id}`);
+      if (res.data.status === "SUCCESS") {
+        setSelectedDiary(res.data.data);
+        setIsDeleteConfirm(false);
+      }
+    } catch (error) {
+      showToast('일기를 불러올 수 없습니다.', 'error');
+    }
+  };
+
+  //일기 삭제
   const handleDeleteDiary = async (id: number) => {
     try {
-      await diaryApi.deleteDiary(id);
-      setDiaries(diaries.filter(d => d.id !== id));
-      setSelectedDiary(null);
-      setIsDeleteConfirm(false);
-      showToast('기록이 삭제되었습니다.', 'info');
+      const res = await api.delete(`/api/diaries/${id}`);
+      if (res.data.status === "SUCCESS") {
+        setDiaries(diaries.filter(d => d.id !== id));
+        setSelectedDiary(null);
+        setIsDeleteConfirm(false);
+        showToast('기록이 성공적으로 삭제되었습니다.', 'info');
+      }
     } catch (error) {
       showToast('삭제에 실패했습니다.', 'error');
     }
   };
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center font-black text-[#1CB0F6]">LOADING...</div>;
+  
+  if (isLoading) return (
+    <div className="min-h-screen flex items-center justify-center font-black text-[#1CB0F6] bg-white">
+      <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity }}>LOADING...</motion.div>
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen bg-[#F7F7F7] font-sans overflow-x-hidden text-[#4B4B4B]">
       
-      {/* 알림  */}
+      {/* 알림 시스템 */}
       <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[200] flex flex-col gap-2 w-full max-w-[350px] px-4 pointer-events-none">
         <AnimatePresence>
           {toasts.map((toast) => (
@@ -151,7 +212,7 @@ const DashboardPage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* 왼쪽 사이드바 */}
+      {/* 사이드바 2 */}
       <aside className={`fixed left-0 top-0 h-full bg-white border-r-2 border-gray-200 flex flex-col p-4 z-[60] transition-transform duration-300 ease-in-out w-64 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="text-[#1CB0F6] font-black text-3xl px-4 mb-10 mt-2 cursor-pointer" onClick={() => setActiveTab('main')}>LIFELINE</div>
         <nav className="flex flex-col gap-2 flex-1">
@@ -166,23 +227,15 @@ const DashboardPage: React.FC = () => {
               setIsSidebarOpen(false); 
             }} 
           />
-          <SidebarItem icon="👤" label="프로필" 
-            active={activeTab === 'profile'} 
-            onClick={() => { setActiveTab('profile'); setIsSidebarOpen(false); }}
-          
-          />
-          <SidebarItem 
-            icon="⚙️" label="설정" 
-            active={activeTab === 'settings'} 
-            onClick={() => { setActiveTab('settings'); setIsSidebarOpen(false); }} 
-          />
+          <SidebarItem icon="👤" label="프로필" active={activeTab === 'profile'} onClick={() => { setActiveTab('profile'); setIsSidebarOpen(false); }} />
+          <SidebarItem icon="⚙️" label="설정" active={activeTab === 'settings'} onClick={() => { setActiveTab('settings'); setIsSidebarOpen(false); }} />
         </nav>
         <div className="p-4 border-t-2 border-gray-100 flex flex-col gap-3">
           <button onClick={handleLogout} className="text-xs font-black text-gray-400 hover:text-red-500 transition-colors uppercase text-left">Logout</button>
         </div>
       </aside>
 
-      {/* 중앙 영역 */}
+      {/* 메인  영역 */}
       <main className="flex-1 flex flex-col items-center pt-24 pb-10 lg:pt-10 px-4 lg:ml-64 lg:mr-80 min-w-0 transition-all">
         
         {/* 메인 탭 */}
@@ -190,28 +243,23 @@ const DashboardPage: React.FC = () => {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-[600px] flex flex-col items-center">
             <div className="w-full bg-[#1CB0F6] rounded-[24px] p-8 lg:p-12 text-white mb-12 shadow-lg relative overflow-hidden">
               <h2 className="text-3xl font-black relative z-10 leading-tight">
-                {user?.name || user?.userId || "사용자"}님,
-                {isEasyMode ? " 반가워요!" : " 오늘도 기록해볼까요?"}
+                {user?.name || user?.userId || "사용자"}님,<br/>
+                {isEasyMode ? "반가워요! 안전하신가요?" : "오늘 하루는 어땠나요?"}
               </h2>
             </div>
-            {isEasyMode ? (
-              <div className="flex flex-col items-center gap-8 py-10 w-full">
-                <div className="text-9xl animate-bounce mb-4">🌱</div>
-                <button 
-                  onClick={() => { setHasCheckedIn(true); showToast('출석 완료!', 'success'); }}
-                  disabled={hasCheckedIn}
-                  className={`w-full max-w-sm py-6 rounded-3xl font-black text-2xl transition-all shadow-[0_8px_0_0_#46A302] active:shadow-none active:translate-y-2
-                    ${hasCheckedIn ? 'bg-gray-200 text-gray-400 shadow-none translate-y-2' : 'bg-[#58CC02] text-white hover:brightness-105'}`}
-                >
-                  {hasCheckedIn ? '출석 완료!' : '출석체크하기'}
-                </button>
-              </div>
-            ) : (
-              <div className="text-gray-300 font-black text-xl italic mt-10 flex flex-col items-center gap-4">
-                <span className="text-8xl">🐣</span>
-                기록은 당신을 성장하게 합니다.
-              </div>
-            )}
+            
+            <div className="flex flex-col items-center gap-8 py-10 w-full">
+              <div className="text-9xl animate-bounce mb-4">{isEasyMode ? '🌱' : '🐣'}</div>
+              <button 
+                onClick={handleCheckIn}
+                disabled={hasCheckedIn}
+                className={`w-full max-w-sm py-6 rounded-3xl font-black text-2xl transition-all shadow-[0_8px_0_0_#46A302] active:shadow-none active:translate-y-2
+                  ${hasCheckedIn ? 'bg-gray-200 text-gray-400 shadow-none translate-y-2' : 'bg-[#58CC02] text-white hover:brightness-105'}`}
+              >
+                {hasCheckedIn ? '출석 완료!' : '안부 전하기'}
+              </button>
+              <p className="text-gray-400 font-bold">마지막 생존 신고를 남겨주세요.</p>
+            </div>
           </motion.div>
         )}
 
@@ -230,44 +278,35 @@ const DashboardPage: React.FC = () => {
 
             <div className="flex flex-col gap-4">
               {diaries.length > 0 ? diaries.map(diary => (
-                <div key={diary.id} onClick={() => { setSelectedDiary(diary); setIsDeleteConfirm(false); }} 
+                <div key={diary.id} onClick={() => handleReadDiary(diary.id)} 
                   className="bg-white border-2 border-gray-200 rounded-2xl p-5 flex items-center gap-4 hover:border-[#1CB0F6] cursor-pointer transition-all group shadow-sm">
-                  <div className="text-3xl bg-[#F7F7F7] w-14 h-14 rounded-xl flex items-center justify-center group-hover:bg-[#DDF4FF] transition-colors">{diary.emotion}</div>
+                  <div className="text-3xl bg-[#F7F7F7] w-14 h-14 rounded-xl flex items-center justify-center group-hover:bg-[#DDF4FF] transition-colors">
+                    {diary.mood}
+                  </div>
                   <div className="flex-1">
-                    <div className="text-[10px] font-black text-[#1CB0F6] uppercase tracking-widest">{diary.date}</div>
+                    <div className="text-[10px] font-black text-[#1CB0F6] uppercase tracking-widest">
+                      {diary.diary_date || diary.diary_date}
+                    </div>
                     <div className="font-black text-gray-700 text-lg leading-tight">{diary.title}</div>
                   </div>
                   <div className="text-gray-300 font-black text-xl group-hover:text-[#1CB0F6]">→</div>
                 </div>
               )) : (
-                <div className="text-center py-20 text-gray-400 font-bold bg-white border-2 border-dashed border-gray-200 rounded-3xl">기록이 없습니다.</div>
+                <div className="text-center py-20 text-gray-400 font-bold bg-white border-2 border-dashed border-gray-200 rounded-3xl">작성된 일기가 없습니다.</div>
               )}
             </div>
           </motion.div>
         )}
 
-
-        {/*프로필 탭*/ }
-        {activeTab === 'profile' &&(
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-[600px]">
+        {/* 프로필 탭 */}
+        {activeTab === 'profile' && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-[600px]">
             <h2 className="text-3xl font-black text-[#4B4B4B] mb-8 px-2">프로필 👤</h2>
             <div className="bg-white border-2 border-gray-200 rounded-[32px] p-8 shadow-sm flex flex-col gap-4">
-              <label className="text-sm font-black text-gray-400 uppercase tracking-widest mb-2 block">내 정보</label>
-              
-              <div className="bg-[#F7F9FA] border-2 border-gray-100 rounded-2xl p-5">
-                <span className="text-xs font-black text-[#1CB0F6] uppercase tracking-widest">Name</span>
-                <h3 className="text-2xl font-black text-[#4B4B4B]">{user?.name}</h3>
-              </div>
-
-              <div className="bg-[#F7F9FA] border-2 border-gray-100 rounded-2xl p-5">
-                <span className="text-xs font-black text-[#1CB0F6] uppercase tracking-widest">ID</span>
-                <h3 className="text-2xl font-black text-[#4B4B4B]">{user?.nickname}</h3>
-              </div>
-
-              <div className="bg-[#F7F9FA] border-2 border-gray-100 rounded-2xl p-5">
-                <span className="text-xs font-black text-[#1CB0F6] uppercase tracking-widest">Current Mode</span>
-                <h3 className="text-2xl font-black text-[#4B4B4B]">{user?.mode}</h3>
-              </div>
+              <ProfileInfo label="Name" value={user?.name || "미설정"} />
+              <ProfileInfo label="User ID" value={user?.userId || "미설정"} />
+              <ProfileInfo label="Nickname" value={user?.nickname || "미설정"} />
+              <ProfileInfo label="Current Mode" value={user?.mode || "NORMAL"} />
             </div>
           </motion.div>
         )}
@@ -279,44 +318,40 @@ const DashboardPage: React.FC = () => {
             <div className="bg-white border-2 border-gray-200 rounded-[32px] p-8 shadow-sm">
               <label className="text-sm font-black text-gray-400 uppercase tracking-widest mb-6 block">인터페이스 모드 선택</label>
               <div className="flex flex-col gap-4">
-                <button onClick={() => handleChangeMode('EASY')} className={`flex items-center gap-5 p-6 rounded-[24px] border-2 transition-all text-left ${user?.mode === 'EASY' ? 'border-[#1CB0F6] bg-[#DDF4FF]' : 'border-gray-100 hover:border-gray-300'}`}>
-                  <div className="text-4xl bg-white w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm">🌱</div>
-                  <div className="flex-1">
-                    <h4 className="font-black text-xl text-gray-700">이지 모드 (Easy)</h4>
-                    <p className="text-sm font-bold text-gray-400">간편한 출석체크 기능만 제공합니다.</p>
-                  </div>
-                  {user?.mode === 'EASY' && <div className="text-[#1CB0F6] text-2xl font-black">✓</div>}
-                </button>
-                <button onClick={() => handleChangeMode('NORMAL')} className={`flex items-center gap-5 p-6 rounded-[24px] border-2 transition-all text-left ${user?.mode === 'NORMAL' ? 'border-[#1CB0F6] bg-[#DDF4FF]' : 'border-gray-100 hover:border-gray-300'}`}>
-                  <div className="text-4xl bg-white w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm">📖</div>
-                  <div className="flex-1">
-                    <h4 className="font-black text-xl text-gray-700">노멀 모드 (Normal)</h4>
-                    <p className="text-sm font-bold text-gray-400">일기 쓰기와 상세 기록 관리가 가능합니다.</p>
-                  </div>
-                  {user?.mode === 'NORMAL' && <div className="text-[#1CB0F6] text-2xl font-black">✓</div>}
-                </button>
+                <ModeButton 
+                  mode="EASY" 
+                  currentMode={user?.mode} 
+                  icon="🌱" 
+                  title="이지 모드 (Easy)" 
+                  desc="간편한 출석체크 기능만 제공합니다." 
+                  onClick={() => handleChangeMode('EASY')} 
+                />
+                <ModeButton 
+                  mode="NORMAL" 
+                  currentMode={user?.mode} 
+                  icon="📖" 
+                  title="노멀 모드 (Normal)" 
+                  desc="일기 쓰기와 상세 기록 관리가 가능합니다." 
+                  onClick={() => handleChangeMode('NORMAL')} 
+                />
               </div>
             </div>
           </motion.div>
         )}
       </main>
 
-      {/* 오른쪽 정보 패널 */}
+      {/* 오른쪽 대시보드 */}
       <aside className="hidden lg:block w-80 fixed right-0 h-full p-6 border-l-2 border-gray-100 bg-white overflow-y-auto">
         <div className="flex items-center gap-3 p-5 bg-[#F7F9FA] rounded-[28px] border-2 border-gray-100 mb-8 shadow-sm">
           <div className="w-10 h-10 bg-[#1CB0F6] rounded-full flex items-center justify-center text-white font-black">
             {user?.name?.[0] || user?.userId?.[0] || 'U'}
           </div>
           <div className="flex flex-col flex-1">
-            
-            <span className="font-black text-sm text-gray-700">
-              {user?.name || user?.userId || "Guest"}님
-            </span>
+            <span className="font-black text-sm text-gray-700">{user?.name || user?.userId}님</span>
             <span className={`text-[10px] font-black px-2 py-0.5 rounded-full w-fit ${isEasyMode ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
               {user?.mode || 'NORMAL'} Mode
             </span>
           </div>
-          <button onClick={handleLogout} className="text-xs font-black text-gray-400 hover:text-red-500 uppercase">Logout</button>
         </div>
         
         <div className="grid grid-cols-4 gap-2 mb-10 px-2 text-center">
@@ -366,7 +401,7 @@ const DashboardPage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* 일기 상세보기  */}
+      {/* 일기 상세 보기  */}
       <AnimatePresence>
         {selectedDiary && (
           <>
@@ -375,13 +410,13 @@ const DashboardPage: React.FC = () => {
               className="fixed inset-x-4 top-20 bottom-20 lg:inset-x-auto lg:left-1/2 lg:-translate-x-1/2 lg:w-[600px] bg-white rounded-[32px] z-[111] p-8 shadow-2xl flex flex-col overflow-hidden">
               <div className="flex justify-between items-start mb-6 flex-shrink-0">
                 <div>
-                  <span className="text-[#1CB0F6] font-black text-sm uppercase tracking-widest">{selectedDiary.date}</span>
+                  <span className="text-[#1CB0F6] font-black text-sm uppercase tracking-widest">{selectedDiary.diary_date || selectedDiary.diary_date}</span>
                   <h3 className="text-2xl lg:text-3xl font-black text-gray-700 mt-1 leading-tight">{selectedDiary.title}</h3>
                 </div>
                 <button onClick={() => setSelectedDiary(null)} className="text-gray-300 hover:text-gray-900 text-2xl font-black">✕</button>
               </div>
               <div className="flex items-center gap-4 mb-6 p-5 bg-[#F7F9FA] rounded-[24px] border-2 border-gray-100 flex-shrink-0">
-                <span className="text-5xl">{selectedDiary.emotion}</span>
+                <span className="text-5xl">{selectedDiary.mood}</span>
                 <span className="font-black text-gray-400 italic">이날의 기분</span>
               </div>
               <div className="flex-1 overflow-y-auto text-lg leading-relaxed text-gray-600 font-bold px-2 whitespace-pre-wrap no-scrollbar">
@@ -424,6 +459,24 @@ const SidebarItem = ({ icon, label, active = false, onClick, disabled = false }:
       ${active && !disabled ? 'bg-[#DDF4FF] text-[#1CB0F6] border-[#84D8FF]' : 'text-[#777]'}`}
   >
     <span className="text-2xl">{icon}</span> {label}
+  </button>
+);
+
+const ProfileInfo = ({ label, value }: { label: string, value: string | number }) => (
+  <div className="bg-[#F7F9FA] border-2 border-gray-100 rounded-2xl p-5">
+    <span className="text-xs font-black text-[#1CB0F6] uppercase tracking-widest">{label}</span>
+    <h3 className="text-2xl font-black text-[#4B4B4B]">{value}</h3>
+  </div>
+);
+
+const ModeButton = ({ mode, currentMode, icon, title, desc, onClick }: any) => (
+  <button onClick={onClick} className={`flex items-center gap-5 p-6 rounded-[24px] border-2 transition-all text-left ${currentMode === mode ? 'border-[#1CB0F6] bg-[#DDF4FF]' : 'border-gray-100 hover:border-gray-300'}`}>
+    <div className="text-4xl bg-white w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm">{icon}</div>
+    <div className="flex-1">
+      <h4 className="font-black text-xl text-gray-700">{title}</h4>
+      <p className="text-sm font-bold text-gray-400">{desc}</p>
+    </div>
+    {currentMode === mode && <div className="text-[#1CB0F6] text-2xl font-black">✓</div>}
   </button>
 );
 
