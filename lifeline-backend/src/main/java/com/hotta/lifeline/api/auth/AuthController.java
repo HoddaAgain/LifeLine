@@ -2,7 +2,7 @@ package com.hotta.lifeline.api.auth;
 
 import com.hotta.lifeline.api.auth.dto.AuthDto;
 import com.hotta.lifeline.api.auth.service.AuthService;
-import com.hotta.lifeline.global.dto.ApiResponse;
+import com.hotta.lifeline.global.common.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

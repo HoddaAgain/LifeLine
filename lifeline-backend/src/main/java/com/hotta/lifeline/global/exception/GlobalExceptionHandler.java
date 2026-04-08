@@ -1,8 +1,6 @@
 package com.hotta.lifeline.global.exception;
 
-import com.hotta.lifeline.global.exception.CustomException;
-import com.hotta.lifeline.global.exception.ErrorCode;
-import com.hotta.lifeline.global.dto.ApiResponse;
+import com.hotta.lifeline.global.common.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;

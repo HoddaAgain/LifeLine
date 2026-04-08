@@ -1,4 +1,4 @@
-package com.hotta.lifeline.global.dto;
+package com.hotta.lifeline.global.common;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

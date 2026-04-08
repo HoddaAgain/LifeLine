@@ -2,7 +2,7 @@ package com.hotta.lifeline.api.diary;
 
 import com.hotta.lifeline.api.diary.dto.DiaryDto;
 import com.hotta.lifeline.api.diary.service.DiaryService;
-import com.hotta.lifeline.global.dto.ApiResponse; // (프로젝트 경로에 맞게 수정 필요)
+import com.hotta.lifeline.global.common.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -36,7 +36,7 @@ public class DiaryController {
     }
 
     // --- 3. 특정 일기 상세 조회 ---
-    // URL 예시: GET /api/diaries/1
+    // ex : GET /api/diaries/1
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<DiaryDto.ReadResponse>> getDiaryDetail(
             @PathVariable("id") Long id) {
