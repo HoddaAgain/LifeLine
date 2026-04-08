@@ -2,13 +2,14 @@
 export type UserMode = 'EASY' | 'NORMAL';
 
 export interface Diary {
-  id: number;           // 각 일기의 고유 식별자
-  title: string;        // 일기 제목
-  content: string;      // 일기 본문 내용
-  emotion: string;      // 선택한 감정 (예: '😊', '😢', '🔥')
-  date: string;         // 작성 날짜 (보통 'YYYY-MM-DD' 형식)
-  createdAt?: string;   // 실제 생성 시간 (ISO string, 필요 시)
-  userId?: string;      // 작성자 식별자 (백엔드 연동용)
+  id: number;
+  title: string;
+  content: string;
+  mood: string;
+  diary_date: string; // diarydate 또는 diary_date (명세서 ListResponse 기준)
+  imgurl?: string;
+  createAt?: string;
+  updateAt?: string;
 }
 
 export type CreateDiaryDto = Omit<Diary, 'id' | 'createdAt'>;

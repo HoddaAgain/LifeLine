@@ -1,14 +1,12 @@
 // src/api/authapi.ts
-import client from './client';
-// src/api/authapi.ts
-import axios from 'axios';
-import {type CommonResponse,type LoginResponse,type LoginRequest, type RegisterRequest } from '../types/index';
+import client from './client'; // 설정해둔 axios 인스턴스 가져오기
+import { type CommonResponse, type LoginResponse, type LoginRequest, type RegisterRequest } from '../types/index';
 
 export const authapi = {
  
   login: (data: LoginRequest) => 
-    axios.post<CommonResponse<LoginResponse>>('/api/auth/login', data),
+    client.post<CommonResponse<LoginResponse>>('api/auth/login', data),
     
   register: (data: RegisterRequest) => 
-    axios.post<CommonResponse<void>>('/api/auth/register', data),
+    client.post<CommonResponse<void>>('api/auth/register', data),
 };

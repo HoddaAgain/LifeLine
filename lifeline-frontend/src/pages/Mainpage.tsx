@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useUserStore } from '../store/useUserStore';
-import backgroundVideo from '../assets/background.mp4';
+
 
 const MainPage: React.FC = () => {
   const navigate = useNavigate();
@@ -27,7 +27,7 @@ const MainPage: React.FC = () => {
           playsInline
           className="w-full h-full object-cover"
         >
-          <source src={backgroundVideo} type="video/mp4" />
+         
           로그인 배경 영상
         </video>
         <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" />
