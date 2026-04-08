@@ -35,6 +35,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       console.error("인증 에러: 로그인이 만료되었습니다.");
+      window.location.href = '/auth?mode=login';
     }
     return Promise.reject(error);
   }

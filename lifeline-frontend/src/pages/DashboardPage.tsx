@@ -46,7 +46,7 @@ const DashboardPage: React.FC = () => {
       const res = await api.post('/api/survival/checkin');
       if (res.data.status === "SUCCESS") {
         setHasCheckedIn(true);
-        showToast('오늘 하루도 안전하게! ✨', 'success');
+        showToast('오늘 하루도 활기차게! ✨', 'success');
       }
     } catch (error) {
       showToast('체크인에 실패했습니다.', 'error');
