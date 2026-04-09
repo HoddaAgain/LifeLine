@@ -16,4 +16,12 @@ public class SurvivalDto {
     public static class CheckInResponse {
         private LocalDateTime lastManualCheckIn;
     }
+
+    @Getter
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class SurvivalStreakResponse {
+        private Integer survivalStreak;
+    }
 }

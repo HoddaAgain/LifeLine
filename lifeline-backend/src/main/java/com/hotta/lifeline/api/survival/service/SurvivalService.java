@@ -3,6 +3,8 @@ package com.hotta.lifeline.api.survival.service;
 import com.hotta.lifeline.api.survival.dto.SurvivalDto;
 import com.hotta.lifeline.domain.survival.Survival;
 import com.hotta.lifeline.domain.survival.SurvivalRepository;
+import com.hotta.lifeline.global.exception.CustomException;
+import com.hotta.lifeline.global.exception.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -48,6 +50,18 @@ public class SurvivalService {
         // 4. 응답 DTO 반환
         return SurvivalDto.CheckInResponse.builder()
                 .lastManualCheckIn(survival.getLastManualCheckIn())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public SurvivalDto.SurvivalStreakResponse getSurvivalStreak() {
+        String loginId = getCurrentLoginId();
+
+        Survival survival = survivalRepository.findByUser_LoginId(loginId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        return SurvivalDto.SurvivalStreakResponse.builder()
+                .survivalStreak(survival.getSurvivalStreak())
                 .build();
     }
 }
