@@ -19,12 +19,15 @@ export const useUserStore = create<UserState>()(
       user: null,
       accessToken: null,
       isLoggedIn: false,
+      hasCheckedIn: false,
+      setHasCheckedIn: (val) => set({ hasCheckedIn: val }),
       setLogin: (userData, token) => {
         // persist가 자동으로 'user-storage'에 저장해주므로 수동 setItem은 삭제 가능
         set({ user: userData, accessToken: token, isLoggedIn: true });
       },
       setLogout: () => {
         set({ user: null, accessToken: null, isLoggedIn: false });
+        localStorage.clear()
       },
       setUser: (user) => set({ user })
     }),
