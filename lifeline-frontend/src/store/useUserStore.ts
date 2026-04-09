@@ -1,38 +1,71 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-
-import { type User } from '../types/index'; 
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { type User } from '../types/index';
 
 interface UserState {
   user: User | null;
+  lastCheckInTime: string | null;
   accessToken: string | null;
   isLoggedIn: boolean;
-  setLogin: (userData: User, token: string) => void; // User 타입을 공통으로 사용
+  hasCheckedIn: boolean;
+  setHasCheckedIn: (val: boolean) => void;
+  setLastCheckInTime: (time: string | null) => void;
+  setLogin: (userData: User, token: string) => void;
   setLogout: () => void;
-  setUser: (user: User | null) => void;
+  setUser: (userOrUpdater: User | null | ((prev: User | null) => User | null)) => void;
 }
 
-// src/store/useUserStore.ts
 export const useUserStore = create<UserState>()(
   persist(
     (set) => ({
       user: null,
+      lastCheckInTime: null, // 초기값 추가
       accessToken: null,
       isLoggedIn: false,
       hasCheckedIn: false,
+
+      // 출석 상태 변경
       setHasCheckedIn: (val) => set({ hasCheckedIn: val }),
+
+      // 마지막 출석 시간 저장
+      setLastCheckInTime: (time) => set({ lastCheckInTime: time }),
+
+      // 로그인 
       setLogin: (userData, token) => {
-        // persist가 자동으로 'user-storage'에 저장해주므로 수동 setItem은 삭제 가능
-        set({ user: userData, accessToken: token, isLoggedIn: true });
+        set({
+          user: userData,
+          accessToken: token,
+          isLoggedIn: true,
+          hasCheckedIn: false,
+          lastCheckInTime: null, 
+        });
       },
+
+      // 로그아웃 
       setLogout: () => {
-        set({ user: null, accessToken: null, isLoggedIn: false });
-        localStorage.clear()
+        set({
+          user: null,
+          accessToken: null,
+          isLoggedIn: false,
+          hasCheckedIn: false,
+          lastCheckInTime: null,
+        });
+      
+        localStorage.removeItem('user-storage');
       },
-      setUser: (user) => set({ user })
+
+      // 유저 정보 업데이트
+      setUser: (userOrUpdater) =>
+        set((state) => ({
+          user:
+            typeof userOrUpdater === 'function'
+              ? userOrUpdater(state.user)
+              : userOrUpdater,
+        })),
     }),
-    { 
-      name: 'user-storage', // 이 이름으로 로컬스토리지에 통합 저장됨
+    {
+      name: 'user-storage',
+      storage: createJSONStorage(() => localStorage),
     }
   )
 );

@@ -13,3 +13,7 @@ lifeline-backend/.gradle/9.4.0/checksums/checksums.lock
 .idea/LifeLine.iml
 *.iml
 *.svg
+hs_err_pid34016.log
+replay_pid34016.log
+hs_err_pid6988.log
+replay_pid6988.log
