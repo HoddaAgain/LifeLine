@@ -5,25 +5,28 @@ import MainPage from './pages/Mainpage';
 import AuthPage from './auth/Authpage';
 import { useUserStore } from './store/useUserStore';
 import DashboardPage from './pages/DashboardPage';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+
 const App: React.FC = () => {
-  
   const { isLoggedIn } = useUserStore();
 
   return (
     <Router>
       <Routes>
-        {/* 메인 페이지*/}
+        {/* 메인 페이지 */}
         <Route path="/" element={<MainPage />} />
 
-        {/* 2. 로그인/회원가입 페이지*/}
-        <Route path="/auth" element={<AuthPage />} />
+      
+        <Route 
+          path="/auth" 
+          element={isLoggedIn ? <Navigate to="/Dashboard" /> : <AuthPage />} 
+        />
 
-        <Route path="/Dashboard" element={<DashboardPage />} />
-        {/* <Route path="/health" element={<HealthPage />} /> */}
+        <Route 
+          path="/Dashboard" 
+          element={isLoggedIn ? <DashboardPage /> : <Navigate to="/auth" />} 
+        />
 
-        {/*잘못된 주소 */}
+      
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>

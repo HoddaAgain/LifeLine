@@ -13,13 +13,12 @@ export const useDiary = (showToast: (msg: string, type?: 'success' | 'error' | '
   const [newDiary, setNewDiary] = useState({ title: '', content: '', mood: '😊' });
   const [isDeleteConfirm, setIsDeleteConfirm] = useState(false);
 
-  // 검색 및 정렬 관련 상태
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<'DESC' | 'ASC'>('DESC');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // 데이터 불러오기
+  // 데이터 불러오기 
   const fetchDiaries = useCallback(async () => {
     if (!isLoggedIn) {
       setIsLoading(false);
@@ -30,11 +29,21 @@ export const useDiary = (showToast: (msg: string, type?: 'success' | 'error' | '
       const year = now.getFullYear();
       const month = now.getMonth() + 1;
       const res = await api.get(`/api/diaries?year=${year}&month=${month}`);
+      
       if (res.data.status === "SUCCESS") {
-        setDiaries(res.data.data || []);
+        const rawData = res.data.data || [];
+        // 서버에서 받아온 데이터의 필드명을 'date'로 통일하여 렌더링 에러 방지
+        const sanitizedData = rawData.map((d: any) => ({
+          ...d,
+          id: d.id || d.diaryId,
+          title: d.title || d.diaryTitle,
+          content: d.content || d.diaryContent,
+          date: d.diaryDate || d.diary_date || d.createdAt?.split('T')[0]
+        }));
+        setDiaries(sanitizedData);
       }
     } catch (error: any) {
-      if (error.response?.status === 401 || error.response?.status === 403 )setLogout;
+      if (error.response?.status === 401 || error.response?.status === 403) setLogout();
       showToast('데이터를 불러오는데 실패했습니다.', 'error');
     } finally {
       setIsLoading(false);
@@ -45,13 +54,26 @@ export const useDiary = (showToast: (msg: string, type?: 'success' | 'error' | '
     fetchDiaries();
   }, [fetchDiaries]);
 
-  // 검색 및 정렬 로직 (Memoization)
+  // 검색 및 정렬 로직
   const filteredAndSortedDiaries = useMemo(() => {
     const list = Array.isArray(diaries) ? diaries : [];
     let result = list.filter(diary => 
-      (diary.title || "").toLowerCase().includes(searchTerm.toLowerCase())
+      (diary.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (diary.content || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
-    result.sort((a, b) => sortOrder === 'DESC' ? b.id - a.id : a.id - b.id);
+
+    
+    result.sort((a: any, b: any) => {
+      const dateA = new Date(a.date || 0).getTime();
+      const dateB = new Date(b.date || 0).getTime();
+      
+      if (sortOrder === 'DESC') {
+        return dateB !== dateA ? dateB - dateA : (b.id || 0) - (a.id || 0);
+      } else {
+        return dateA !== dateB ? dateA - dateB : (a.id || 0) - (b.id || 0);
+      }
+    });
+
     return result;
   }, [diaries, searchTerm, sortOrder]);
 
@@ -69,31 +91,46 @@ export const useDiary = (showToast: (msg: string, type?: 'success' | 'error' | '
     try {
       const localDate = new Date();
       const formattedDate = `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+      
       const payload = { ...newDiary, diaryDate: formattedDate, imageUrl: "" };
       const res = await api.post('/api/diaries', payload);
       
       if (res.data.status === "SUCCESS") {
         const savedData = res.data.data;
+
+        // 저장 즉시 상태에 넣을 때도 필드명을 fetch할 때와 동일하게 가공
         const diaryForState = { 
-          ...savedData, 
-          diary_date: savedData.diary_date || savedData.diaryDate || formattedDate 
+          ...savedData,
+          id: savedData.id || savedData.diaryId || Date.now(), 
+          title: savedData.title || savedData.diaryTitle || newDiary.title,
+          content: savedData.content || savedData.diaryContent || newDiary.content,
+          date: savedData.diaryDate || savedData.diary_date || formattedDate 
         };
+
         setDiaries(prev => [diaryForState, ...prev]);
         setIsWriting(false);
         setNewDiary({ title: '', content: '', mood: '😊' });
         showToast('오늘의 기록이 저장되었습니다! 📖', 'success');
       }
     } catch (error) {
+      console.error("Save Error:", error);
       showToast('저장에 실패했습니다.', 'error');
     }
   };
 
-  // 일기 상세 조회
+  // 상세 조회 시에도 필드 보정 적용
   const handleReadDiary = async (id: number) => {
     try {
       const res = await api.get(`/api/diaries/${id}`);
       if (res.data.status === "SUCCESS") {
-        setSelectedDiary(res.data.data);
+        const d = res.data.data;
+        setSelectedDiary({
+          ...d,
+          id: d.id || d.diaryId,
+          title: d.title || d.diaryTitle,
+          content: d.content || d.diaryContent,
+          date: d.diaryDate || d.diary_date
+        });
         setIsDeleteConfirm(false);
       }
     } catch (error) {
@@ -101,12 +138,11 @@ export const useDiary = (showToast: (msg: string, type?: 'success' | 'error' | '
     }
   };
 
-  // 일기 삭제
   const handleDeleteDiary = async (id: number) => {
     try {
       const res = await api.delete(`/api/diaries/${id}`);
       if (res.data.status === "SUCCESS") {
-        setDiaries(prev => prev.filter(d => d.id !== id));
+        setDiaries(prev => prev.filter(d => (d.id || (d as any).diaryId) !== id));
         setSelectedDiary(null);
         setIsDeleteConfirm(false);
         showToast('기록이 성공적으로 삭제되었습니다.', 'info');
