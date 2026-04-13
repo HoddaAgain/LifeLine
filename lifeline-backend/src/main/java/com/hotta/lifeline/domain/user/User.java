@@ -37,11 +37,13 @@ public class User extends BaseTimeEntity {
     private LocalDate birthDate;
 
     // 동기부여 및 상태 체크용 필드
-
     @Column(nullable = false)
     private Integer diaryStreak = 0;
 
-    private LocalDate lastDiaryDate;
+    private LocalDate lastDiaryDate; //마지막 일기 작성일
+
+    @Column(nullable = false)
+    private Boolean isTutorialCompleted = false; //튜토리얼 완료 여부 전송
 
     //survival 테이블이랑 양뱡향 조인
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -61,5 +63,11 @@ public class User extends BaseTimeEntity {
     public void updateDiaryStreak(LocalDate date) {
         this.lastDiaryDate = date;
         this.diaryStreak += 1;
+    }
+
+
+    // [비즈니스 로직] 튜토리얼 완료/스킵 처리
+    public void completeTutorial() {
+        this.isTutorialCompleted = true;
     }
 }

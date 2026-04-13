@@ -1,0 +1,41 @@
+package com.hotta.lifeline.api.init.service;
+
+// api/init/service/InitService.java
+
+import com.hotta.lifeline.api.init.dto.InitDto;
+import com.hotta.lifeline.domain.survival.Survival;
+import com.hotta.lifeline.domain.user.User;
+import com.hotta.lifeline.domain.user.UserRepository;
+import com.hotta.lifeline.global.exception.CustomException;
+import com.hotta.lifeline.global.exception.ErrorCode;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+
+@Service
+@RequiredArgsConstructor
+public class InitService {
+
+    private final UserRepository userRepository;
+
+    @Transactional(readOnly = true)
+    public InitDto.InitResponse getInitData(String loginId) {
+        User user = userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
+
+        Survival survival = user.getSurvival();
+        LocalDateTime now = LocalDateTime.now();
+
+        // 오늘 수동 체크인을 이미 했는지 확인
+        boolean hasCheckedInToday = survival.getLastManualCheckIn().toLocalDate().equals(now.toLocalDate());
+
+        return InitDto.InitResponse.builder()
+                .survivalUpdatedAt(survival.getUpdatedAt())
+                .hasCheckedInToday(hasCheckedInToday)
+                .survivalStreak(survival.getSurvivalStreak())
+                .isTutorialCompleted(user.getIsTutorialCompleted())
+                .build();
+    }
+}
