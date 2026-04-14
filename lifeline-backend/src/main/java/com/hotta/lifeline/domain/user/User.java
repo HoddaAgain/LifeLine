@@ -1,5 +1,6 @@
 package com.hotta.lifeline.domain.user;
 
+import com.hotta.lifeline.domain.mission.DailyMission;
 import com.hotta.lifeline.domain.survival.Survival;
 import com.hotta.lifeline.global.entity.BaseTimeEntity;
 import jakarta.persistence.*;
@@ -7,6 +8,8 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Setter
@@ -45,9 +48,16 @@ public class User extends BaseTimeEntity {
     @Column(nullable = false)
     private Boolean isTutorialCompleted = false; //튜토리얼 완료 여부 전송
 
+    //조인된 테이블
+
     //survival 테이블이랑 양뱡향 조인
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Survival survival;
+
+    // 양방향 조인 (User가 삭제되면 미션도 같이 삭제됨)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("missionIndex ASC")
+    private List<DailyMission> dailyMissions = new ArrayList<>();
 
     @Builder
     public User(String loginId, String password, String name, String mode, String emergencyContact, LocalDate birthDate) {

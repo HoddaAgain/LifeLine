@@ -1,6 +1,7 @@
 package com.hotta.lifeline.api.auth.service;
 
 import com.hotta.lifeline.api.auth.dto.AuthDto;
+import com.hotta.lifeline.domain.mission.DailyMission;
 import com.hotta.lifeline.domain.survival.Survival;
 import com.hotta.lifeline.domain.user.User;
 import com.hotta.lifeline.domain.user.UserRepository;
@@ -42,6 +43,15 @@ public class AuthService {
         Survival survival = Survival.builder()
                 .user(user)
                 .build();
+
+        //이하 외부 테이블 조인에 필요한 정보 주입
+        for (int i = 0; i < 3; i++) {   //지금은 3개임
+            DailyMission mission = DailyMission.builder()
+                    .user(user)
+                    .missionIndex(i)
+                    .build();
+            user.getDailyMissions().add(mission);
+        }
 
         user.setSurvival(survival);
 
