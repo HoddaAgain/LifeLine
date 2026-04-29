@@ -57,9 +57,8 @@ const AuthPage: React.FC = () => {
           try {
             // 2. 토큰 해독 시도
             decoded = jwtDecode(accessToken);
-            console.log("해독된 토큰 정보:", decoded);
+            
           } catch (decodeError) {
-            console.warn("토큰 해독 실패, 기본값을 사용합니다.");
           }
 
           // 3. User 객체 생성 (토큰에 데이터가 없다면 응답값이나 입력값을 활용)
