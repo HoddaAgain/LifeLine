@@ -3,12 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-// Lottie 관련 설정
+
 import LottieComponent from "lottie-react";
 import type { LottieRefCurrentProps } from "lottie-react";
 import kanaLottie from '../assets/kana.json'; 
-
-// 로고 이미지 추가
 import LogoImg from '../assets/Logo.png'; 
 
 import DiaryWriteModal from '../components/DiaryWrite';
@@ -30,6 +28,7 @@ const DashboardPage: React.FC = () => {
   const queryClient = useQueryClient();
   const lottieRef = useRef<LottieRefCurrentProps>(null);
   
+  // Zustand Store
   const { 
     user, setUser, setLogout, 
     hasCheckedIn, setHasCheckedIn, 
@@ -38,22 +37,23 @@ const DashboardPage: React.FC = () => {
   
   const isEasyMode = user?.mode === 'EASY';
 
+ 
   const Lottie = useMemo(() => {
     if (!LottieComponent) return null;
     return (LottieComponent as any).default || LottieComponent;
   }, []);
 
-  // UI 및 인터랙션 상태
+  // UI 상태 관리
   const [activeTab, setActiveTab] = useState<'main' | 'diary' | 'settings' | 'profile'>('main');
   const [isMissionOpen, setIsMissionOpen] = useState(false);
   const [touchCount, setTouchCount] = useState(0);
 
-  // 일기 검색/정렬 필터
+  // 일기 검색 및 정렬 필터
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState<'latest' | 'oldest'>('latest');
   const [selectedDate, setSelectedDate] = useState('');
 
-  // 커스텀 알림
+  // 함수 시스템
   const [toasts, setToasts] = useState<any[]>([]);
   const showToast = useCallback((message: string, type: 'info' | 'success' | 'error' = 'info') => {
     const id = Date.now();
@@ -61,62 +61,41 @@ const DashboardPage: React.FC = () => {
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
   }, []);
 
-  const checkIsToday = useCallback((isoString: string | null | undefined) => {
-    if (!isoString) return false;
-    try {
-      const date = new Date(isoString);
-      const today = new Date();
-      return (
-        date.getFullYear() === today.getFullYear() &&
-        date.getMonth() === today.getMonth() &&
-        date.getDate() === today.getDate()
-      );
-    } catch (e) { return false; }
-  }, []);
-
-  const handleKanaTouch = () => {
-    if (lottieRef.current) {
-      lottieRef.current.stop(); 
-      lottieRef.current.play();
-    }
-    
-    if (touchCount < 3) {
-      const newCount = touchCount + 1;
-      setTouchCount(newCount);
-      if (newCount === 3) {
-        showToast('카나가 기분 좋아 보입니다!', 'success');
-      }
-    }
-  };
-
-  /* 출석 상태 데이터 가져오기 */
-  const { data: attendanceData, isLoading: isStatusLoading } = useQuery({
-    queryKey: ['attendance', user?.userId],
+  //최초 진입시 init호출
+  const { data: initData, isLoading: isInitLoading } = useQuery({
+    queryKey: ['userInit', user?.userId],
     queryFn: async () => {
-      const res = await api.get('/api/survival/survival-streak');
-      return res.data.data;
+      const res = await api.get('/api/v1/init');
+      return res.data.data; // { isCheckedInToday, survivalStreak, lastCheckInAt, isTutorialCompleted }
     },
     enabled: !!user?.userId,
-    refetchInterval: 500000,
+    staleTime: 1000 * 60 * 5, // 5분간 데이터 캐싱
   });
 
-  /* 서버 데이터 동기화 */
+  /**
+   서버 데이터와 전역 상태(Store) 동기화
+   */
   useEffect(() => {
-    if (attendanceData) {
-      if (attendanceData.lastManualCheckIn) {
-        const isToday = checkIsToday(attendanceData.lastManualCheckIn);
-        setHasCheckedIn(isToday);
-        setLastCheckInTime(attendanceData.lastManualCheckIn);
-      }
-      setUser((prev: any) => (prev ? { ...prev, diaryStreak: attendanceData.survivalStreak } : null));
+    if (initData) {
+      setHasCheckedIn(initData.isCheckedInToday);
+      if (initData.lastCheckInAt) setLastCheckInTime(initData.lastCheckInAt);
+      
+      setUser((prev: any) => (prev ? { 
+        ...prev, 
+        diaryStreak: initData.survivalStreak 
+      } : null));
     }
-  }, [attendanceData, checkIsToday, setHasCheckedIn, setLastCheckInTime, setUser]);
+  }, [initData, setHasCheckedIn, setLastCheckInTime, setUser]);
 
+  /**
+    출석체크 기능
+   */
   const checkInMutation = useMutation({
     mutationFn: () => api.post('/api/survival/checkin'),
     onSuccess: () => {
       setHasCheckedIn(true);
-      queryClient.invalidateQueries({ queryKey: ['attendance'] });
+      // 스트릭 갱신을 위해 init 데이터를 새로고침
+      queryClient.invalidateQueries({ queryKey: ['userInit'] });
       showToast('인사 완료! 기분 좋은 하루 되세요!', 'success');
     },
     onError: (error: any) => {
@@ -124,18 +103,20 @@ const DashboardPage: React.FC = () => {
     }
   });
 
+  // 버튼 잠금 로직: 초기 로딩 중이거나 이미 출석했거나 요청 중일 때
+  const isButtonLocked = useMemo(() => {
+    if (isInitLoading) return true;
+    return hasCheckedIn || checkInMutation.isPending || checkInMutation.isSuccess;
+  }, [isInitLoading, hasCheckedIn, checkInMutation.isPending, checkInMutation.isSuccess]);
+
   const diaryHook = useDiary(showToast);
 
-  const isButtonLocked = useMemo(() => {
-    if (isStatusLoading) return true; 
-    if (attendanceData?.lastManualCheckIn) {
-      return checkIsToday(attendanceData.lastManualCheckIn);
-    }
-    return hasCheckedIn;
-  }, [isStatusLoading, attendanceData, hasCheckedIn, checkIsToday]);
-
+  /**
+    필터링된 일기 목록 계산
+   */
   const filteredDiaries = useMemo(() => {
     let list = Array.isArray(diaryHook.diaries) ? [...diaryHook.diaries] : [];
+    
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       list = list.filter(d => 
@@ -143,17 +124,23 @@ const DashboardPage: React.FC = () => {
         (d.content?.toLowerCase().includes(q) ?? false)
       );
     }
+    
     if (selectedDate) {
       list = list.filter((d: any) => (d.date || d.diaryDate || d.createdAt || "").includes(selectedDate));
     }
+
     list.sort((a: any, b: any) => {
       const dateA = new Date(a.date || a.diaryDate || a.createdAt || 0).getTime();
       const dateB = new Date(b.date || b.diaryDate || b.createdAt || 0).getTime();
       return sortOrder === 'latest' ? dateB - dateA : dateA - dateB;
     });
+
     return list;
   }, [diaryHook.diaries, searchQuery, sortOrder, selectedDate]);
 
+  /**
+    미션 시스템 계산
+   */
   const missions = useMemo(() => {
     const baseMissions = [
       { id: 1, title: '안녕이라고 말하기!', current: isButtonLocked ? 1 : 0, goal: 1, icon: '👋' },
@@ -161,27 +148,41 @@ const DashboardPage: React.FC = () => {
     ];
     
     if (!isEasyMode) {
-      baseMissions.push({ id: 2, title: '오늘의 일기 쓰기', current: diaryHook.diaries.some((d: any) => checkIsToday(d.date || d.diaryDate || d.createdAt)) ? 1 : 0, goal: 1, icon: '✍️' });
+      const isDiaryDone = diaryHook.diaries.some((d: any) => {
+        const dDate = new Date(d.date || d.diaryDate || d.createdAt);
+        const today = new Date();
+        return dDate.toDateString() === today.toDateString();
+      });
+      baseMissions.push({ id: 2, title: '오늘의 일기 쓰기', current: isDiaryDone ? 1 : 0, goal: 1, icon: '✍️' });
     }
     return baseMissions;
-  }, [isButtonLocked, isEasyMode, diaryHook.diaries, checkIsToday, touchCount]);
+  }, [isButtonLocked, isEasyMode, diaryHook.diaries, touchCount]);
 
   const completedCount = missions.filter(m => m.current >= m.goal).length;
+
+  const handleKanaTouch = () => {
+    if (lottieRef.current) {
+      lottieRef.current.stop(); 
+      lottieRef.current.play();
+    }
+    if (touchCount < 3) {
+      const newCount = touchCount + 1;
+      setTouchCount(newCount);
+      if (newCount === 3) showToast('카나가 기분 좋아 보입니다!', 'success');
+    }
+  };
 
   return (
     <div className="flex justify-center h-screen bg-[#F0F2F5] font-sans text-[#4B4B4B] overflow-hidden select-none">
       <div className="w-full max-w-md bg-white shadow-2xl flex flex-col relative h-full">
         
-        {/* 헤더 */}
+        {/* 상단 헤더 */}
         <header className={`${isEasyMode ? 'h-16' : 'h-14'} border-b border-gray-100 flex items-center justify-between px-5 bg-white shrink-0 z-10`}>
-          {/* 텍스트 대신 로고 이미지 적용 */}
-          <img 
-            src={LogoImg} 
-            alt="LIFELINE" 
-            className={`${isEasyMode ? 'h-10' : 'h-8'} w-auto object-contain`} 
-          />
+          <img src={LogoImg} alt="LIFELINE" className={`${isEasyMode ? 'h-10' : 'h-8'} w-auto object-contain`} />
           <div className={`flex gap-2 items-center ${!isEasyMode ? 'cursor-pointer' : ''}`} onClick={() => !isEasyMode && setIsMissionOpen(true)}>
-            <span className={`${isEasyMode ? 'text-xl' : 'text-sm'} text-orange-400 font-black`}> { user?.diaryStreak || 0}</span>
+            <span className={`${isEasyMode ? 'text-xl' : 'text-sm'} text-orange-400 font-black`}> 
+              {user?.diaryStreak || 0}
+            </span>
           </div>
         </header>
 
@@ -189,31 +190,22 @@ const DashboardPage: React.FC = () => {
           {activeTab === 'main' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col min-h-full items-center justify-center">
               
-              {/* 상단 말풍선 */}
+              {/* 말풍선 가이드 */}
               <div className="w-full mt-2 shrink-0">
                 <div className={`${isEasyMode ? 'bg-[#1CB0F6] p-6 rounded-[40px]' : 'bg-[#1CB0F6] p-6 rounded-[28px]'} text-white shadow-lg w-full text-center relative after:content-[''] after:absolute after:top-[98%] after:left-1/2 after:-translate-x-1/2 after:border-l-[12px] after:border-l-transparent after:border-r-[12px] after:border-r-transparent after:border-t-[12px] after:border-t-current`}>
                   <h2 className={`${isEasyMode ? 'text-2xl font-black' : 'text-xl font-black'} leading-tight break-keep`}>
                     {user?.name}님, <br />
-                    {isButtonLocked && !isStatusLoading ? "오늘 인사를 마쳤어요!" : "카나에게 인사할까요?"}
+                    {isButtonLocked && !isInitLoading ? "오늘 인사를 마쳤어요!" : "카나에게 인사할까요?"}
                   </h2>
                 </div>
               </div>
 
-              {/* 마스코트 중앙 */}
-              <div 
-                className="flex-1 flex items-center justify-center my-4 min-h-[220px] cursor-pointer"
-                onClick={handleKanaTouch}
-              >
+              {/* 카나 마스코트 애니메이션 */}
+              <div className="flex-1 flex items-center justify-center my-4 min-h-[220px] cursor-pointer" onClick={handleKanaTouch}>
                 {Lottie && kanaLottie ? (
                   <Lottie 
-                    lottieRef={lottieRef}
-                    animationData={kanaLottie} 
-                    loop={false} 
-                    autoplay={false}
-                    style={{ 
-                      width: isEasyMode ? '420px' : '320px', 
-                      height: isEasyMode ? '420px' : '320px' 
-                    }}
+                    lottieRef={lottieRef} animationData={kanaLottie} loop={false} autoplay={false}
+                    style={{ width: isEasyMode ? '420px' : '320px', height: isEasyMode ? '420px' : '320px' }}
                     className="drop-shadow-2xl transition-all duration-500" 
                   />
                 ) : (
@@ -224,19 +216,17 @@ const DashboardPage: React.FC = () => {
                 )}
               </div>
 
-         
+              {/* 출석체크 메인 버튼 */}
               <div className="w-full mt-auto">
-               
-               
-
                 <button 
                   onClick={() => checkInMutation.mutate()} 
-                  disabled={isButtonLocked || checkInMutation.isPending} 
-                  className={`w-full font-black transition-all mb-4 ${isEasyMode ? `py-10 text-4xl rounded-[40px] shadow-[0_12px_0_0_#46A302] active:translate-y-2 active:shadow-none` : `py-5 text-xl rounded-[22px] shadow-[0_6px_0_0_#46A302] active:translate-y-1 active:shadow-none`} ${(isButtonLocked || checkInMutation.isPending) ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' : 'bg-[#58CC02] text-white'}`}
+                  disabled={isButtonLocked} 
+                  className={`w-full font-black transition-all mb-4 ${isEasyMode ? `py-10 text-4xl rounded-[40px] shadow-[0_12px_0_0_#46A302] active:translate-y-2 active:shadow-none` : `py-5 text-xl rounded-[22px] shadow-[0_6px_0_0_#46A302] active:translate-y-1 active:shadow-none`} ${isButtonLocked ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' : 'bg-[#58CC02] text-white'}`}
                 >
-                  {isStatusLoading ? '확인 중...' : (isButtonLocked ? '반가웠어요!' : '안녕, 카나!')}
+                  {isInitLoading ? '정보 확인 중...' : (isButtonLocked ? '반가웠어요!' : '안녕, 카나!')}
                 </button>
 
+                {/* 미션 간략 표시 (이지 모드 제외) */}
                 {!isEasyMode && (
                   <div onClick={() => setIsMissionOpen(true)} className="w-full bg-white border-2 border-gray-100 rounded-[22px] p-4 mb-4 cursor-pointer">
                     <div className="flex justify-between items-center mb-2">
@@ -252,33 +242,27 @@ const DashboardPage: React.FC = () => {
             </motion.div>
           )}
 
-          {/* 일기 탭  */}
+          {/* 일기 목록 탭 */}
           {activeTab === 'diary' && !isEasyMode && (
             <div className="h-full flex flex-col pt-2 overflow-hidden">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-black  text-gray-800">내 기록 </h2>
+                <h2 className="text-2xl font-black text-gray-800">내 기록</h2>
                 <button onClick={() => diaryHook.setIsWriting(true)} className="bg-[#58CC02] text-white px-5 py-2.5 rounded-2xl font-black shadow-[0_4px_0_0_#46A302] active:translate-y-1 transition-all text-sm">+ 새 일기</button>
               </div>
 
-              {/* 필터 영역 */}
               <div className="flex flex-col gap-2 mb-4 shrink-0">
                 <input 
-                  type="text" 
-                  placeholder="기록 검색..." 
-                  value={searchQuery}
+                  type="text" placeholder="기록 검색..." value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full p-3 bg-gray-100 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#1CB0F6]"
                 />
                 <div className="flex gap-2">
                   <input 
-                    type="date" 
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
+                    type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)}
                     className="flex-1 p-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-500"
                   />
                   <select 
-                    value={sortOrder}
-                    onChange={(e: any) => setSortOrder(e.target.value)}
+                    value={sortOrder} onChange={(e: any) => setSortOrder(e.target.value)}
                     className="p-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-500"
                   >
                     <option value="latest">최신순</option>
@@ -324,7 +308,7 @@ const DashboardPage: React.FC = () => {
           {/* 설정 탭 */}
           {activeTab === 'settings' && (
             <div className="pt-2 text-center">
-              <h2 className="text-2xl font-black mb-8  text-gray-800">설정 </h2>
+              <h2 className="text-2xl font-black mb-8 text-gray-800">설정</h2>
               <button onClick={() => { setLogout(); navigate('/'); }} className="w-full py-4 bg-red-50 text-red-500 rounded-2xl font-black">
                 로그아웃
               </button>
@@ -332,7 +316,7 @@ const DashboardPage: React.FC = () => {
           )}
         </main>
 
-        {/* 탭 바 */}
+        {/* 하단 내비게이션 바 */}
         <footer className={`${isEasyMode ? 'h-24 pb-2' : 'h-20 pb-6'} bg-white border-t border-gray-100 flex items-center justify-around px-4 shrink-0 z-50`}>
           <TabButton icon="🏠" label="홈" active={activeTab === 'main'} onClick={() => setActiveTab('main')} isEasy={isEasyMode} />
           {!isEasyMode && <TabButton icon="📖" label="기록" active={activeTab === 'diary'} onClick={() => setActiveTab('diary')} isEasy={isEasyMode} />}
@@ -340,12 +324,12 @@ const DashboardPage: React.FC = () => {
           <TabButton icon="⚙️" label="설정" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} isEasy={isEasyMode} />
         </footer>
 
-        {/* 미션 팝업 */}
+        {/* 미션 상세 모달 */}
         <AnimatePresence>
           {isMissionOpen && !isEasyMode && (
             <>
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsMissionOpen(false)} className="absolute inset-0 bg-black/40 z-[60] backdrop-blur-[2px]" />
-              <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[32px] z-[70] p-8">
+              <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[32px] z-[70] p-8 shadow-2xl">
                 <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6" />
                 <h3 className="text-2xl font-black mb-6 flex items-center gap-2 text-gray-800">오늘의 미션 <span className="text-[#1CB0F6]">{completedCount}/{missions.length}</span></h3>
                 <div className="flex flex-col gap-4">
@@ -367,10 +351,11 @@ const DashboardPage: React.FC = () => {
         </AnimatePresence>
       </div>
 
-      {/* 모달 */}
+      {/* 일기 관련 모달 */}
       <DiaryWriteModal isOpen={diaryHook.isWriting} onClose={() => diaryHook.setIsWriting(false)} onSave={diaryHook.handleSaveDiary} newDiary={diaryHook.newDiary} setNewDiary={diaryHook.setNewDiary} />
       <DiaryDetailModal diary={diaryHook.selectedDiary} onClose={() => diaryHook.setSelectedDiary(null)} onDelete={diaryHook.handleDeleteDiary} isDeleteConfirm={diaryHook.isDeleteConfirm} setIsDeleteConfirm={diaryHook.setIsDeleteConfirm} />
 
+      {/* 함수 알림 컨테이너 */}
       <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 w-full max-w-[320px] px-4 pointer-events-none">
         <AnimatePresence>
           {toasts.map(t => (

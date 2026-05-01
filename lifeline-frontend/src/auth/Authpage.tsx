@@ -10,12 +10,12 @@ import {
   type LoginResponse, 
   type CommonResponse 
 } from '../types/index'; 
-
+import { useQueryClient } from '@tanstack/react-query';
 const AuthPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { setLogin } = useUserStore();
-
+  const queryClient = useQueryClient();
   const [isLoginView, setIsLoginView] = useState(searchParams.get('mode') !== 'signup');
   
   const [formData, setFormData] = useState({
@@ -39,7 +39,7 @@ const AuthPage: React.FC = () => {
     e.preventDefault();
     try {
       if (isLoginView) {
-        // 1. 로그인 API 호출
+        
         const response = await authapi.login({
           userId: formData.userId,
           password: formData.password,
@@ -50,12 +50,12 @@ const AuthPage: React.FC = () => {
         if (apiRes && apiRes.data) {
           const { accessToken, mode } = apiRes.data;
           
-          // 디버깅용: 응답 데이터 확인
-          console.log("원본 응답 데이터:", apiRes.data);
+          
+          
 
           let decoded: any = {};
           try {
-            // 2. 토큰 해독 시도
+            
             decoded = jwtDecode(accessToken);
             
           } catch (decodeError) {
