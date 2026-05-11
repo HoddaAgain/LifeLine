@@ -56,6 +56,6 @@ public class Survival extends BaseTimeEntity {
         this.user= user;
         LocalDateTime now = LocalDateTime.now();
         this.setLastDeviceActivity(now);
-        this.setLastManualCheckIn(now);
+        this.setLastManualCheckIn(now.minusDays(1));
     }
 }

@@ -67,6 +67,7 @@ public class User extends BaseTimeEntity {
         this.mode = mode;
         this.emergencyContact = emergencyContact;
         this.birthDate = birthDate;
+        this.isTutorialCompleted = false;
     }
 
     // [비즈니스 로직] 일기 작성 시 연속일 처리
