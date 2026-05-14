@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class InitDto {
 
@@ -14,5 +15,6 @@ public class InitDto {
         private Boolean hasCheckedInToday;          // 오늘 수동 체크인 여부
         private Integer survivalStreak;             // 연속 생존신고 일수
         private Boolean isTutorialCompleted;        // 튜토리얼 완료 여부
+        private List<Boolean> missionStatuses;      // 미션 n개 (지금은 3개) 완료여부
     }
 }

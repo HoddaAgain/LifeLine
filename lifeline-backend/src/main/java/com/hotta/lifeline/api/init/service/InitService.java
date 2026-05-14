@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,15 +29,20 @@ public class InitService {
 
         Survival survival = user.getSurvival();
         LocalDateTime now = LocalDateTime.now();
-
         // 오늘 수동 체크인을 이미 했는지 확인
         boolean hasCheckedInToday = survival.getLastManualCheckIn().toLocalDate().equals(now.toLocalDate());
+
+        //isCleared된 미션들만 가져와 리스트로 변환
+        List<Boolean> missionStatuses = user.getDailyMissions().stream()
+                .map(mission -> mission.getIsCleared())
+                .collect(Collectors.toList());
 
         return InitDto.InitResponse.builder()
                 .survivalUpdatedAt(survival.getUpdatedAt())
                 .hasCheckedInToday(hasCheckedInToday)
                 .survivalStreak(survival.getSurvivalStreak())
                 .isTutorialCompleted(user.getIsTutorialCompleted())
+                .missionStatuses(missionStatuses)
                 .build();
     }
 }
