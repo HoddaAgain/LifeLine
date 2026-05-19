@@ -66,7 +66,7 @@ const DashboardPage: React.FC = () => {
     queryKey: ['userInit', user?.userId],
     queryFn: async () => {
       const res = await api.get('/api/v1/init');
-      return res.data.data; // { isCheckedInToday, survivalStreak, lastCheckInAt, isTutorialCompleted }
+      return res.data.data; // { hasCheckedInToday, survivalStreak, survivalUpdatedAt, isTutorialCompleted, missionStatuses }
     },
     enabled: !!user?.userId,
     staleTime: 1000 * 60 * 5, // 5분간 데이터 캐싱
@@ -77,8 +77,8 @@ const DashboardPage: React.FC = () => {
    */
   useEffect(() => {
     if (initData) {
-      setHasCheckedIn(initData.isCheckedInToday);
-      if (initData.lastCheckInAt) setLastCheckInTime(initData.lastCheckInAt);
+      setHasCheckedIn(initData.hasCheckedInToday);
+      if (initData.survivalUpdatedAt) setLastCheckInTime(initData.survivalUpdatedAt);
       
       setUser((prev: any) => (prev ? { 
         ...prev, 
@@ -87,13 +87,26 @@ const DashboardPage: React.FC = () => {
     }
   }, [initData, setHasCheckedIn, setLastCheckInTime, setUser]);
 
+  const completeMission = useCallback(async (index: number) => {
+    const isAlreadyCompleted = initData?.missionStatuses?.[index];
+    if (isAlreadyCompleted) return;
+
+    try {
+      await api.patch(`/api/v1/missions/${index}`);
+      queryClient.invalidateQueries({ queryKey: ['userInit'] });
+    } catch (error) {
+      console.error('Mission complete failed:', error);
+    }
+  }, [initData?.missionStatuses, queryClient]);
+
   /**
     출석체크 기능
    */
   const checkInMutation = useMutation({
     mutationFn: () => api.post('/api/survival/checkin'),
-    onSuccess: () => {
+    onSuccess: async () => {
       setHasCheckedIn(true);
+      await completeMission(0);
       // 스트릭 갱신을 위해 init 데이터를 새로고침
       queryClient.invalidateQueries({ queryKey: ['userInit'] });
       showToast('인사 완료! 기분 좋은 하루 되세요!', 'success');
@@ -110,6 +123,20 @@ const DashboardPage: React.FC = () => {
   }, [isInitLoading, hasCheckedIn, checkInMutation.isPending, checkInMutation.isSuccess]);
 
   const diaryHook = useDiary(showToast);
+
+  const isDiaryDoneToday = useMemo(() => {
+    return diaryHook.diaries.some((d: any) => {
+      const dDate = new Date(d.date || d.diaryDate || d.createdAt);
+      const today = new Date();
+      return dDate.toDateString() === today.toDateString();
+    });
+  }, [diaryHook.diaries]);
+
+  useEffect(() => {
+    if (!isEasyMode && isDiaryDoneToday) {
+      completeMission(1);
+    }
+  }, [completeMission, isDiaryDoneToday, isEasyMode]);
 
   /**
     필터링된 일기 목록 계산
@@ -142,21 +169,17 @@ const DashboardPage: React.FC = () => {
     미션 시스템 계산
    */
   const missions = useMemo(() => {
+    const missionStatuses = initData?.missionStatuses ?? [];
     const baseMissions = [
-      { id: 1, title: '안녕이라고 말하기!', current: isButtonLocked ? 1 : 0, goal: 1, icon: '👋' },
-      { id: 3, title: '카나 터치하기', current: touchCount, goal: 3, icon: '🐣' },
+      { id: 1, title: '안녕이라고 말하기!', current: missionStatuses[0] || isButtonLocked ? 1 : 0, goal: 1, icon: '👋' },
+      { id: 3, title: '카나 터치하기', current: missionStatuses[2] ? 3 : touchCount, goal: 3, icon: '🐣' },
     ];
     
     if (!isEasyMode) {
-      const isDiaryDone = diaryHook.diaries.some((d: any) => {
-        const dDate = new Date(d.date || d.diaryDate || d.createdAt);
-        const today = new Date();
-        return dDate.toDateString() === today.toDateString();
-      });
-      baseMissions.push({ id: 2, title: '오늘의 일기 쓰기', current: isDiaryDone ? 1 : 0, goal: 1, icon: '✍️' });
+      baseMissions.push({ id: 2, title: '오늘의 일기 쓰기', current: missionStatuses[1] || isDiaryDoneToday ? 1 : 0, goal: 1, icon: '✍️' });
     }
     return baseMissions;
-  }, [isButtonLocked, isEasyMode, diaryHook.diaries, touchCount]);
+  }, [initData?.missionStatuses, isButtonLocked, isDiaryDoneToday, isEasyMode, touchCount]);
 
   const completedCount = missions.filter(m => m.current >= m.goal).length;
 
@@ -168,7 +191,10 @@ const DashboardPage: React.FC = () => {
     if (touchCount < 3) {
       const newCount = touchCount + 1;
       setTouchCount(newCount);
-      if (newCount === 3) showToast('카나가 기분 좋아 보입니다!', 'success');
+      if (newCount === 3) {
+        completeMission(2);
+        showToast('카나가 기분 좋아 보입니다!', 'success');
+      }
     }
   };
 
