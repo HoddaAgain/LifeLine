@@ -61,6 +61,12 @@ const DashboardPage: React.FC = () => {
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
   }, []);
 
+  const handleLogout = useCallback(() => {
+    queryClient.clear();
+    setLogout();
+    navigate('/');
+  }, [navigate, queryClient, setLogout]);
+
   //최초 진입시 init호출
   const { data: initData, isLoading: isInitLoading } = useQuery({
     queryKey: ['userInit', user?.userId],
@@ -123,6 +129,19 @@ const DashboardPage: React.FC = () => {
   }, [isInitLoading, hasCheckedIn, checkInMutation.isPending, checkInMutation.isSuccess]);
 
   const diaryHook = useDiary(showToast);
+
+  useEffect(() => {
+    setActiveTab('main');
+    setIsMissionOpen(false);
+    setTouchCount(0);
+    setSearchQuery('');
+    setSortOrder('latest');
+    setSelectedDate('');
+    setToasts([]);
+    diaryHook.setIsWriting(false);
+    diaryHook.setSelectedDiary(null);
+    diaryHook.setIsDeleteConfirm(false);
+  }, [user?.userId]);
 
   const isDiaryDoneToday = useMemo(() => {
     return diaryHook.diaries.some((d: any) => {
@@ -335,7 +354,7 @@ const DashboardPage: React.FC = () => {
           {activeTab === 'settings' && (
             <div className="pt-2 text-center">
               <h2 className="text-2xl font-black mb-8 text-gray-800">설정</h2>
-              <button onClick={() => { setLogout(); navigate('/'); }} className="w-full py-4 bg-red-50 text-red-500 rounded-2xl font-black">
+              <button onClick={handleLogout} className="w-full py-4 bg-red-50 text-red-500 rounded-2xl font-black">
                 로그아웃
               </button>
             </div>

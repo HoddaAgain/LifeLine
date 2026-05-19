@@ -7,7 +7,7 @@ import { useUserStore } from './store/useUserStore';
 import DashboardPage from './pages/DashboardPage';
 
 const App: React.FC = () => {
-  const { isLoggedIn } = useUserStore();
+  const { isLoggedIn, user } = useUserStore();
 
   return (
     <Router>
@@ -23,7 +23,7 @@ const App: React.FC = () => {
 
         <Route 
           path="/Dashboard" 
-          element={isLoggedIn ? <DashboardPage /> : <Navigate to="/auth" />} 
+          element={isLoggedIn ? <DashboardPage key={user?.userId ?? 'dashboard'} /> : <Navigate to="/auth" />} 
         />
 
       
