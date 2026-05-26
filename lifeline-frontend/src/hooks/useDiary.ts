@@ -152,6 +152,46 @@ export const useDiary = (showToast: (msg: string, type?: 'success' | 'error' | '
     }
   };
 
+  const handleUpdateDiary = async (
+    id: number,
+    data: { title: string; content: string; mood: string; diaryDate: string }
+  ) => {
+    if (!data.title.trim() || !data.content.trim()) {
+      return showToast('제목과 내용을 모두 입력해주세요!', 'error');
+    }
+
+    try {
+      const payload = {
+        title: data.title,
+        content: data.content,
+        mood: data.mood,
+        diaryDate: data.diaryDate,
+        imageUrl: (selectedDiary as any)?.imageUrl || '',
+      };
+
+      const res = await api.put(`/api/diaries/${id}`, payload);
+
+      if (res.data.status === 'SUCCESS') {
+        const updatedDiary = {
+          ...(selectedDiary as any),
+          ...payload,
+          id,
+          date: payload.diaryDate,
+        };
+
+        setDiaries(prev =>
+          prev.map(d => ((d.id || (d as any).diaryId) === id ? { ...d, ...updatedDiary } : d))
+        );
+        setSelectedDiary(updatedDiary);
+        setIsDeleteConfirm(false);
+        showToast('기록이 수정되었습니다.', 'success');
+      }
+    } catch (error) {
+      console.error('Update Error:', error);
+      showToast('수정에 실패했습니다.', 'error');
+    }
+  };
+
   return {
     diaries, isLoading, isWriting, setIsWriting,
     selectedDiary, setSelectedDiary,
@@ -161,6 +201,6 @@ export const useDiary = (showToast: (msg: string, type?: 'success' | 'error' | '
     sortOrder, setSortOrder,
     currentPage, setCurrentPage,
     totalPages, currentItems,
-    handleSaveDiary, handleReadDiary, handleDeleteDiary
+    handleSaveDiary, handleReadDiary, handleDeleteDiary, handleUpdateDiary
   };
 };
