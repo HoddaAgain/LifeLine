@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useUserStore } from '../store/useUserStore';
 
 // 접속 환경에 따라 주소를 자동으로 선택하는 함수
-const getBaseURL = () => {
+export const getBaseURL = () => {
   // 웹 브라우저(localhost)에서 접속 중일 때
   if (window.location.hostname === 'localhost') {
     return 'http://localhost:8080';

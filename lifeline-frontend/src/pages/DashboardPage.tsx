@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 
 
 import LottieComponent from "lottie-react";
@@ -13,8 +14,21 @@ import DiaryWriteModal from '../components/DiaryWrite';
 import DiaryDetailModal from '../components/DiaryDetail';
 import { useDiary } from '../hooks/useDiary';
 import { useUserStore } from '../store/useUserStore';
-import api from '../api/axios';
+import api, { getBaseURL } from '../api/axios';
 
+interface WidgetBridgePlugin {
+  updateWidgetState(options: {
+    token?: string | null;
+    baseUrl: string;
+    hasCheckedIn: boolean;
+    survivalStreak: number;
+    missionCompletedCount: number;
+    missionTotalCount: number;
+    lastUpdated?: string | null;
+  }): Promise<void>;
+}
+
+const WidgetBridge = registerPlugin<WidgetBridgePlugin>('WidgetBridge');
 
 const TabButton = ({ icon, label, active, onClick, isEasy }: any) => (
   <button onClick={onClick} className="flex-1 flex flex-col items-center group">
@@ -41,7 +55,8 @@ const DashboardPage: React.FC = () => {
   const { 
     user, setUser, setLogout, 
     hasCheckedIn, setHasCheckedIn, 
-    setLastCheckInTime 
+    setLastCheckInTime,
+    accessToken
   } = useUserStore();
   
   const isEasyMode = user?.mode === 'EASY';
@@ -71,6 +86,17 @@ const DashboardPage: React.FC = () => {
   }, []);
 
   const handleLogout = useCallback(() => {
+    if (Capacitor.isNativePlatform()) {
+      WidgetBridge.updateWidgetState({
+        token: null,
+        baseUrl: getBaseURL(),
+        hasCheckedIn: false,
+        survivalStreak: 0,
+        missionCompletedCount: 0,
+        missionTotalCount: 0,
+        lastUpdated: null,
+      }).catch((error) => console.error('Widget logout sync failed:', error));
+    }
     queryClient.clear();
     setLogout();
     navigate('/');
@@ -87,6 +113,32 @@ const DashboardPage: React.FC = () => {
     staleTime: 1000 * 60 * 5, // 5분간 데이터 캐싱
   });
 
+  const syncWidgetState = useCallback(async (checkedIn = hasCheckedIn) => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    try {
+      const missionStatuses = initData?.missionStatuses ?? [];
+      const missionTotalCount = isEasyMode ? 2 : 3;
+      const missionCompletedCount = [
+        missionStatuses[0] || checkedIn,
+        !isEasyMode && missionStatuses[1],
+        missionStatuses[2],
+      ].filter(Boolean).length;
+
+      await WidgetBridge.updateWidgetState({
+        token: accessToken,
+        baseUrl: getBaseURL(),
+        hasCheckedIn: checkedIn,
+        survivalStreak: initData?.survivalStreak ?? user?.diaryStreak ?? 0,
+        missionCompletedCount,
+        missionTotalCount,
+        lastUpdated: initData?.survivalUpdatedAt ?? null,
+      });
+    } catch (error) {
+      console.error('Widget sync failed:', error);
+    }
+  }, [accessToken, hasCheckedIn, initData?.missionStatuses, initData?.survivalStreak, initData?.survivalUpdatedAt, isEasyMode, user?.diaryStreak]);
+
   /**
    서버 데이터와 전역 상태(Store) 동기화
    */
@@ -101,6 +153,10 @@ const DashboardPage: React.FC = () => {
       } : null));
     }
   }, [initData, setHasCheckedIn, setLastCheckInTime, setUser]);
+
+  useEffect(() => {
+    syncWidgetState();
+  }, [syncWidgetState]);
 
   const completeMission = useCallback(async (index: number) => {
     const isAlreadyCompleted = initData?.missionStatuses?.[index];
@@ -121,6 +177,7 @@ const DashboardPage: React.FC = () => {
     mutationFn: () => api.post('/api/survival/checkin'),
     onSuccess: async () => {
       setHasCheckedIn(true);
+      await syncWidgetState(true);
       await completeMission(0);
       // 스트릭 갱신을 위해 init 데이터를 새로고침
       queryClient.invalidateQueries({ queryKey: ['userInit'] });
