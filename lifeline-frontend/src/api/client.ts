@@ -8,10 +8,10 @@ export interface CommonResponse<T> {
 }
 
 const client = axios.create({
-  // 접속한 환경이 localhost(웹)면 서버 주소로, 아니면 안드로이드 에뮬레이터 주소로 설정
+  // 접속한 환경이 localhost(웹)면 로컬 서버로, 아니면 실제 안드로이드 기기에서 같은 Wi-Fi의 PC 백엔드로 접속
   baseURL: window.location.hostname === 'localhost' 
     ? 'http://localhost:8080'  // 웹 브라우저에서 실행 중일 때
-    : 'http://10.0.2.2:8080',  // 안드로이드 에뮬레이터에서 실행 중일 때
+    : 'http://10.0.20.167:8080',
   headers: {
     'Content-Type': 'application/json',
   },

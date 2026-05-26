@@ -7,8 +7,8 @@ const getBaseURL = () => {
   if (window.location.hostname === 'localhost') {
     return 'http://localhost:8080';
   }
-  // 그 외(안드로이드 에뮬레이터 등) 환경일 때
-  return 'http://10.0.2.2:8080';
+  // 실제 안드로이드 기기에서 같은 Wi-Fi의 PC 백엔드로 접속할 때
+  return 'http://10.0.20.167:8080';
 };
 
 const api = axios.create({
