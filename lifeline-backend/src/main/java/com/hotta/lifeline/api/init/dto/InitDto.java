@@ -23,6 +23,14 @@ public class InitDto {
         private Boolean hasCheckedInToday;          // 오늘 수동 체크인 여부
         private Integer survivalStreak;             // 연속 생존신고 일수
         private Boolean isTutorialCompleted;        // 튜토리얼 완료 여부
-        private List<Boolean> missionStatuses;      // 미션 n개 (지금은 3개) 완료여부
+        private List<MissionInfo> missions;          // 미션 리스트 (인덱스 + 설명 + 완료여부)
+    }
+
+    @Getter
+    @Builder
+    public static class MissionInfo {
+        private Integer index;           // 미션 순서 (0, 1, 2)
+        private String description;      // 미션 설명
+        private Boolean isCleared;       // 완료 여부
     }
 }
