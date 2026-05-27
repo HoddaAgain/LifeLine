@@ -78,6 +78,7 @@ const AuthPage: React.FC = () => {
           };
 
           // 4. 스토어 저장 및 이동
+          queryClient.clear();
           setLogin(userData, accessToken);
           
           // ID가 undefined인 문제를 해결하기 위해 안전한 필드(name 또는 userId) 출력

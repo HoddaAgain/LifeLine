@@ -2,13 +2,13 @@ import axios from 'axios';
 import { useUserStore } from '../store/useUserStore';
 
 // 접속 환경에 따라 주소를 자동으로 선택하는 함수
-const getBaseURL = () => {
+export const getBaseURL = () => {
   // 웹 브라우저(localhost)에서 접속 중일 때
   if (window.location.hostname === 'localhost') {
     return 'http://localhost:8080';
   }
-  // 그 외(안드로이드 에뮬레이터 등) 환경일 때
-  return 'http://10.0.2.2:8080';
+  // 실제 안드로이드 기기에서 같은 Wi-Fi의 PC 백엔드로 접속할 때
+  return 'http://10.0.20.167:8080';
 };
 
 const api = axios.create({

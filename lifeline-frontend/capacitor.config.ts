@@ -8,7 +8,7 @@ const config: CapacitorConfig = {
     // 앱 자체를 HTTP로 실행하도록 설정 (Mixed Content 에러 회피)
     androidScheme: 'http', 
     cleartext: true,
-    allowNavigation: ['10.0.2.2']
+    allowNavigation: ['10.0.20.167']
   }
 };
 
