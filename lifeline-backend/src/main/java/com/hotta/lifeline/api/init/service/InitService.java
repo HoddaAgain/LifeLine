@@ -38,7 +38,14 @@ public class InitService {
                 .collect(Collectors.toList());
 
         return InitDto.InitResponse.builder()
+                .userId(user.getLoginId())
+                .name(user.getName())
+                .mode(user.getMode())
+                .emergencyContact(user.getEmergencyContact())
+                .birthDate(user.getBirthDate())
+                .diaryStreak(user.getDiaryStreak())
                 .survivalUpdatedAt(survival.getUpdatedAt())
+                .survivalStatus(survival.getSurvivalStatus())
                 .hasCheckedInToday(hasCheckedInToday)
                 .survivalStreak(survival.getSurvivalStreak())
                 .isTutorialCompleted(user.getIsTutorialCompleted())
