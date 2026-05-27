@@ -32,9 +32,13 @@ public class InitService {
         // 오늘 수동 체크인을 이미 했는지 확인
         boolean hasCheckedInToday = survival.getLastManualCheckIn().toLocalDate().equals(now.toLocalDate());
 
-        //isCleared된 미션들만 가져와 리스트로 변환
-        List<Boolean> missionStatuses = user.getDailyMissions().stream()
-                .map(mission -> mission.getIsCleared())
+        // 미션 리스트를 MissionInfo DTO로 변환
+        List<InitDto.MissionInfo> missions = user.getDailyMissions().stream()
+                .map(mission -> InitDto.MissionInfo.builder()
+                        .index(mission.getMissionIndex())
+                        .description(mission.getMissionType().getDescription())
+                        .isCleared(mission.getIsCleared())
+                        .build())
                 .collect(Collectors.toList());
 
         return InitDto.InitResponse.builder()
@@ -49,7 +53,7 @@ public class InitService {
                 .hasCheckedInToday(hasCheckedInToday)
                 .survivalStreak(survival.getSurvivalStreak())
                 .isTutorialCompleted(user.getIsTutorialCompleted())
-                .missionStatuses(missionStatuses)
+                .missions(missions)
                 .build();
     }
 }

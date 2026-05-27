@@ -29,10 +29,15 @@ public class DailyMission extends BaseTimeEntity {
     @Column(nullable = false)
     private Boolean isCleared = false; // 완료 여부
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MissionType missionType; // 배정된 미션 종류
+
     @Builder
-    public DailyMission(User user, Integer missionIndex) {
+    public DailyMission(User user, Integer missionIndex, MissionType missionType) {
         this.user = user;
         this.missionIndex = missionIndex;
+        this.missionType = missionType;
         this.isCleared = false;
     }
 
@@ -43,6 +48,12 @@ public class DailyMission extends BaseTimeEntity {
 
     // 자정 초기화 처리 메서드
     public void resetMission() {
+        this.isCleared = false;
+    }
+
+    // 미션 타입 갱신 메서드 (자정 리셋 시 사용)
+    public void updateMission(MissionType newType) {
+        this.missionType = newType;
         this.isCleared = false;
     }
 }
