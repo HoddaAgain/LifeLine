@@ -54,6 +54,33 @@ export const useDiary = (showToast: (msg: string, type?: 'success' | 'error' | '
     fetchDiaries();
   }, [fetchDiaries]);
 
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    const refreshDiaries = () => {
+      fetchDiaries();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshDiaries();
+      }
+    };
+
+    window.addEventListener('focus', refreshDiaries);
+    window.addEventListener('pageshow', refreshDiaries);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    const syncTimer = window.setInterval(refreshDiaries, 15000);
+
+    return () => {
+      window.removeEventListener('focus', refreshDiaries);
+      window.removeEventListener('pageshow', refreshDiaries);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.clearInterval(syncTimer);
+    };
+  }, [fetchDiaries, isLoggedIn]);
+
   // 검색 및 정렬 로직
   const filteredAndSortedDiaries = useMemo(() => {
     const list = Array.isArray(diaries) ? diaries : [];
@@ -201,6 +228,7 @@ export const useDiary = (showToast: (msg: string, type?: 'success' | 'error' | '
     sortOrder, setSortOrder,
     currentPage, setCurrentPage,
     totalPages, currentItems,
+    refreshDiaries: fetchDiaries,
     handleSaveDiary, handleReadDiary, handleDeleteDiary, handleUpdateDiary
   };
 };

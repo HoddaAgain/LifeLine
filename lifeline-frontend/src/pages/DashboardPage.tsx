@@ -28,6 +28,21 @@ interface WidgetBridgePlugin {
   }): Promise<void>;
 }
 
+interface InitData {
+  userId?: string;
+  name?: string;
+  mode?: 'EASY' | 'NORMAL' | string;
+  emergencyContact?: string | null;
+  birthDate?: string | null;
+  diaryStreak?: number;
+  survivalUpdatedAt?: string | null;
+  survivalStatus?: string | null;
+  hasCheckedInToday?: boolean;
+  survivalStreak?: number;
+  isTutorialCompleted?: boolean;
+  missionStatuses?: boolean[];
+}
+
 const WidgetBridge = registerPlugin<WidgetBridgePlugin>('WidgetBridge');
 
 const TabButton = ({ icon, label, active, onClick, isEasy }: any) => (
@@ -103,15 +118,42 @@ const DashboardPage: React.FC = () => {
   }, [navigate, queryClient, setLogout]);
 
   //최초 진입시 init호출
-  const { data: initData, isLoading: isInitLoading } = useQuery({
+  const { data: initData, isLoading: isInitLoading, refetch: refetchInit } = useQuery<InitData>({
     queryKey: ['userInit', user?.userId],
     queryFn: async () => {
       const res = await api.get('/api/v1/init');
       return res.data.data; // { hasCheckedInToday, survivalStreak, survivalUpdatedAt, isTutorialCompleted, missionStatuses }
     },
     enabled: !!user?.userId,
-    staleTime: 1000 * 60 * 5, // 5분간 데이터 캐싱
+    staleTime: 1000 * 30,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
+
+  useEffect(() => {
+    if (!user?.userId) return;
+
+    const refreshInit = () => {
+      queryClient.invalidateQueries({ queryKey: ['userInit', user.userId] });
+      refetchInit();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshInit();
+      }
+    };
+
+    window.addEventListener('focus', refreshInit);
+    window.addEventListener('pageshow', refreshInit);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', refreshInit);
+      window.removeEventListener('pageshow', refreshInit);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [queryClient, refetchInit, user?.userId]);
 
   const syncWidgetState = useCallback(async (checkedIn = hasCheckedIn) => {
     if (!Capacitor.isNativePlatform()) return;
@@ -149,7 +191,14 @@ const DashboardPage: React.FC = () => {
       
       setUser((prev: any) => (prev ? { 
         ...prev, 
-        diaryStreak: initData.survivalStreak 
+        userId: initData.userId ?? prev.userId,
+        name: initData.name ?? prev.name,
+        mode: initData.mode ?? prev.mode,
+        emergencyContact: initData.emergencyContact ?? prev.emergencyContact,
+        birthDate: initData.birthDate ?? prev.birthDate,
+        diaryStreak: initData.diaryStreak ?? initData.survivalStreak ?? prev.diaryStreak,
+        survivalStreak: initData.survivalStreak ?? prev.survivalStreak,
+        lastSurvivalTime: initData.survivalUpdatedAt ?? prev.lastSurvivalTime,
       } : null));
     }
   }, [initData, setHasCheckedIn, setLastCheckInTime, setUser]);
@@ -169,6 +218,12 @@ const DashboardPage: React.FC = () => {
       console.error('Mission complete failed:', error);
     }
   }, [initData?.missionStatuses, queryClient]);
+
+  useEffect(() => {
+    if (initData?.hasCheckedInToday && !initData?.missionStatuses?.[0]) {
+      completeMission(0);
+    }
+  }, [completeMission, initData?.hasCheckedInToday, initData?.missionStatuses]);
 
   /**
     출석체크 기능
@@ -195,6 +250,12 @@ const DashboardPage: React.FC = () => {
   }, [isInitLoading, hasCheckedIn, checkInMutation.isPending, checkInMutation.isSuccess]);
 
   const diaryHook = useDiary(showToast);
+
+  useEffect(() => {
+    if (activeTab === 'diary') {
+      diaryHook.refreshDiaries();
+    }
+  }, [activeTab, diaryHook.refreshDiaries]);
 
   useEffect(() => {
     setActiveTab('main');
@@ -267,6 +328,28 @@ const DashboardPage: React.FC = () => {
   }, [initData?.missionStatuses, isButtonLocked, isDiaryDoneToday, isEasyMode, touchCount]);
 
   const completedCount = missions.filter(m => m.current >= m.goal).length;
+
+  const settingsInfo = useMemo(() => {
+    const mode = initData?.mode ?? user?.mode;
+    const survivalStatusMap: Record<string, string> = {
+      SAFE: '안전',
+      WARNING: '주의',
+      EMERGENCY: '위험',
+    };
+
+    return {
+      userId: initData?.userId ?? user?.userId,
+      name: initData?.name ?? user?.name,
+      modeLabel: mode === 'EASY' ? '이지 모드' : '노멀 모드',
+      emergencyContact: initData?.emergencyContact ?? user?.emergencyContact,
+      birthDate: initData?.birthDate ?? user?.birthDate,
+      diaryStreak: initData?.diaryStreak ?? user?.diaryStreak ?? 0,
+      survivalStreak: initData?.survivalStreak ?? user?.survivalStreak ?? user?.diaryStreak ?? 0,
+      survivalStatus: initData?.survivalStatus ? (survivalStatusMap[initData.survivalStatus] ?? initData.survivalStatus) : null,
+      isTutorialCompleted: initData?.isTutorialCompleted === undefined ? null : (initData.isTutorialCompleted ? '완료' : '미완료'),
+      lastUpdated: initData?.survivalUpdatedAt ? new Date(initData.survivalUpdatedAt).toLocaleString() : null,
+    };
+  }, [initData, user]);
 
   const handleKanaTouch = () => {
     if (lottieRef.current) {
@@ -424,25 +507,29 @@ const DashboardPage: React.FC = () => {
               <div className="bg-[#F7F9FA] border-2 border-gray-100 rounded-[28px] p-5 mb-4">
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-[#1CB0F6] text-white flex items-center justify-center font-black text-2xl shadow-sm">
-                    {user?.name?.[0] || user?.userId?.[0] || 'L'}
+                    {settingsInfo.name?.[0] || settingsInfo.userId?.[0] || 'L'}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-lg font-black text-gray-800 truncate">{user?.name || user?.userId}</p>
-                    <p className="text-xs font-black text-gray-400 truncate">{user?.userId}</p>
+                    <p className="text-lg font-black text-gray-800 truncate">{settingsInfo.name || settingsInfo.userId}</p>
+                    <p className="text-xs font-black text-gray-400 truncate">{settingsInfo.userId}</p>
                   </div>
                 </div>
               </div>
 
               <section className="bg-white border-2 border-gray-50 rounded-[24px] px-5 mb-4">
-                <SettingRow label="사용 모드" value={user?.mode === 'EASY' ? '이지 모드' : '노멀 모드'} />
-                <SettingRow label="생년월일" value={user?.birthDate} />
-                <SettingRow label="비상 연락처" value={user?.emergencyContact} />
+                <SettingRow label="사용 모드" value={settingsInfo.modeLabel} />
+                <SettingRow label="생년월일" value={settingsInfo.birthDate} />
+                <SettingRow label="비상 연락처" value={settingsInfo.emergencyContact} />
+                
               </section>
 
               <section className="bg-white border-2 border-gray-50 rounded-[24px] px-5 mb-6">
-                <SettingRow label="오늘 체크인" value={hasCheckedIn ? '완료' : '아직 안 함'} />
-                <SettingRow label="연속 안부" value={`${user?.diaryStreak || 0}일`} />
-                <SettingRow label="마지막 갱신" value={initData?.survivalUpdatedAt ? new Date(initData.survivalUpdatedAt).toLocaleString() : null} />
+                
+                <SettingRow label="생존 상태" value={settingsInfo.survivalStatus} />
+                <SettingRow label="연속 안부" value={`${settingsInfo.survivalStreak}일`} />
+                <SettingRow label="일기 연속" value={`${settingsInfo.diaryStreak}일`} />
+                <SettingRow label="미션 완료" value={`${completedCount}/${missions.length}`} />
+                <SettingRow label="마지막 갱신" value={settingsInfo.lastUpdated} />
               </section>
 
               <button onClick={handleLogout} className="w-full py-4 bg-red-50 text-red-500 rounded-2xl font-black">

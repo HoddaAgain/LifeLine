@@ -35,8 +35,36 @@ const AuthPage: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const getMissingFieldMessage = () => {
+    const requiredFields = isLoginView
+      ? [
+          { key: 'userId', label: '아이디' },
+          { key: 'password', label: '비밀번호' },
+        ]
+      : [
+          { key: 'userId', label: '아이디' },
+          { key: 'password', label: '비밀번호' },
+          { key: 'name', label: '이름' },
+          { key: 'emergencyContact', label: '비상연락처' },
+          { key: 'birthDate', label: '생년월일' },
+        ];
+
+    const missingField = requiredFields.find(({ key }) => {
+      const value = formData[key as keyof typeof formData];
+      return typeof value === 'string' && value.trim() === '';
+    });
+
+    return missingField ? `${missingField.label}을(를) 입력해주세요.` : null;
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    const missingMessage = getMissingFieldMessage();
+    if (missingMessage) {
+      showToast(missingMessage, 'error');
+      return;
+    }
+
     try {
       if (isLoginView) {
         
@@ -127,7 +155,7 @@ const AuthPage: React.FC = () => {
           <p className="text-gray-400 font-bold">{isLoginView ? '반가워요!' : '새로운 계정 만들기'}</p>
         </div>
 
-        <form onSubmit={handleAuth} className="flex flex-col gap-4">
+        <form onSubmit={handleAuth} noValidate className="flex flex-col gap-4">
           <Input label="아이디" type="text" value={formData.userId} 
             onChange={(val) => setFormData({ ...formData, userId: val })} placeholder="아이디를 입력하세요" />
           <Input label="비밀번호" type="password" value={formData.password} 
@@ -187,7 +215,6 @@ const Input = ({ label, type, value, onChange, placeholder }: InputProps) => (
       value={value} 
       onChange={(e) => onChange(e.target.value)} 
       placeholder={placeholder} 
-      required
       className="w-full px-5 py-3.5 bg-[#F7F9FA] border-2 border-gray-100 rounded-2xl font-bold outline-none focus:border-[#1CB0F6] transition-all placeholder:text-gray-300" 
     />
   </div>
