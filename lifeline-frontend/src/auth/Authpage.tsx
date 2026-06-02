@@ -280,7 +280,11 @@ const AuthPage: React.FC = () => {
       }
     } catch (error: any) {
       console.error("인증 에러:", error);
-      showToast(error.response?.data?.message || '인증에 실패했습니다.', 'error');
+      const serverMessage = error.response?.data?.message;
+      const networkMessage = error.request
+        ? '서버에 연결하지 못했습니다. 와이파이와 PC 백엔드를 확인해주세요.'
+        : '인증에 실패했습니다.';
+      showToast(serverMessage || networkMessage, 'error');
     }
   };
 

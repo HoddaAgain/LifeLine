@@ -2,13 +2,13 @@ spring:
   application:
     name: lifeline-backend
   datasource:
-    url: jdbc:h2:mem:testdb;MODE=MySQL # MySQL 문법과 호환되도록 설정
+    url: jdbc:h2:file:./data/lifeline;MODE=MySQL # 로컬 재시작 후에도 회원/미션 데이터 유지
     driver-class-name: org.h2.Driver
     username: sa
     password:
   jpa:
     hibernate:
-      ddl-auto: create # 서버가 켜질 때마다 우리가 만든 Entity를 보고 테이블을 새로 만들어줌 (개발용)
+      ddl-auto: update # 로컬 개발 중 서버 재시작 시 기존 데이터 삭제 방지
     show-sql: true     # 콘솔에 쿼리문 보여주기
     properties:
       hibernate:

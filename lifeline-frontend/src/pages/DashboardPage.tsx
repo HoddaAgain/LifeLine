@@ -44,6 +44,7 @@ interface InitData {
   missionStatuses?: boolean[];
   missions?: Array<{
     index?: number;
+    description?: string;
     isCleared?: boolean;
   }>;
 }
@@ -178,12 +179,8 @@ const DashboardPage: React.FC = () => {
 
     try {
       const missionStatuses = initData?.missionStatuses ?? [];
-      const missionTotalCount = isEasyMode ? 2 : 3;
-      const missionCompletedCount = [
-        missionStatuses[0] || checkedIn,
-        !isEasyMode && missionStatuses[1],
-        missionStatuses[2],
-      ].filter(Boolean).length;
+      const missionTotalCount = initData?.missions?.length ?? 3;
+      const missionCompletedCount = missionStatuses.filter(Boolean).length;
 
       await WidgetBridge.updateWidgetState({
         token: accessToken,
@@ -197,7 +194,7 @@ const DashboardPage: React.FC = () => {
     } catch (error) {
       console.error('Widget sync failed:', error);
     }
-  }, [accessToken, hasCheckedIn, initData?.missionStatuses, initData?.survivalStreak, initData?.survivalUpdatedAt, isEasyMode, user?.diaryStreak]);
+  }, [accessToken, hasCheckedIn, initData?.missionStatuses, initData?.missions?.length, initData?.survivalStreak, initData?.survivalUpdatedAt, user?.diaryStreak]);
 
   /**
    서버 데이터와 전역 상태(Store) 동기화
@@ -231,17 +228,13 @@ const DashboardPage: React.FC = () => {
 
     try {
       await api.patch(`/api/v1/missions/${index}`);
+      showToast('미션을 완료했어요.', 'success');
       queryClient.invalidateQueries({ queryKey: ['userInit'] });
     } catch (error) {
       console.error('Mission complete failed:', error);
+      showToast('미션 완료 처리에 실패했습니다.', 'error');
     }
-  }, [initData?.missionStatuses, queryClient]);
-
-  useEffect(() => {
-    if (initData?.hasCheckedInToday && !initData?.missionStatuses?.[0]) {
-      completeMission(0);
-    }
-  }, [completeMission, initData?.hasCheckedInToday, initData?.missionStatuses]);
+  }, [initData?.missionStatuses, queryClient, showToast]);
 
   /**
     출석체크 기능
@@ -251,7 +244,6 @@ const DashboardPage: React.FC = () => {
     onSuccess: async () => {
       setHasCheckedIn(true);
       await syncWidgetState(true);
-      await completeMission(0);
       // 스트릭 갱신을 위해 init 데이터를 새로고침
       queryClient.invalidateQueries({ queryKey: ['userInit'] });
       showToast('인사 완료! 기분 좋은 하루 되세요!', 'success');
@@ -349,20 +341,6 @@ const DashboardPage: React.FC = () => {
     diaryHook.setIsDeleteConfirm(false);
   }, [user?.userId]);
 
-  const isDiaryDoneToday = useMemo(() => {
-    return diaryHook.diaries.some((d: any) => {
-      const dDate = new Date(d.date || d.diaryDate || d.createdAt);
-      const today = new Date();
-      return dDate.toDateString() === today.toDateString();
-    });
-  }, [diaryHook.diaries]);
-
-  useEffect(() => {
-    if (!isEasyMode && isDiaryDoneToday) {
-      completeMission(1);
-    }
-  }, [completeMission, isDiaryDoneToday, isEasyMode]);
-
   /**
     필터링된 일기 목록 계산
    */
@@ -394,17 +372,18 @@ const DashboardPage: React.FC = () => {
     미션 시스템 계산
    */
   const missions = useMemo(() => {
-    const missionStatuses = initData?.missionStatuses ?? [];
-    const baseMissions = [
-      { id: 1, title: '안녕이라고 말하기!', current: missionStatuses[0] || isButtonLocked ? 1 : 0, goal: 1, icon: '👋' },
-      { id: 3, title: '카나 터치하기', current: missionStatuses[2] ? 3 : touchCount, goal: 3, icon: '🐣' },
-    ];
-    
-    if (!isEasyMode) {
-      baseMissions.push({ id: 2, title: '오늘의 일기 쓰기', current: missionStatuses[1] || isDiaryDoneToday ? 1 : 0, goal: 1, icon: '✍️' });
-    }
-    return baseMissions;
-  }, [initData?.missionStatuses, isButtonLocked, isDiaryDoneToday, isEasyMode, touchCount]);
+    const backendMissions = initData?.missions ?? [];
+
+    return [...backendMissions]
+      .sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+      .map((mission) => ({
+        id: mission.index ?? 0,
+        index: mission.index ?? 0,
+        title: mission.description || '오늘의 미션',
+        current: mission.isCleared ? 1 : 0,
+        goal: 1,
+      }));
+  }, [initData?.missions]);
 
   const completedCount = missions.filter(m => m.current >= m.goal).length;
 
@@ -439,7 +418,6 @@ const DashboardPage: React.FC = () => {
       const newCount = touchCount + 1;
       setTouchCount(newCount);
       if (newCount === 3) {
-        completeMission(2);
         showToast('카나가 기분 좋아 보입니다!', 'success');
       }
     }
@@ -504,10 +482,10 @@ const DashboardPage: React.FC = () => {
                   <div onClick={() => setIsMissionOpen(true)} className="w-full bg-white border-2 border-gray-100 rounded-[22px] p-4 mb-4 cursor-pointer">
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-black text-gray-400 text-[10px] uppercase">Daily Missions</span>
-                      <span className="font-black text-[#1CB0F6] text-xs">{completedCount}/{missions.length}</span>
+                      <span className="font-black text-[#1CB0F6] text-xs">{completedCount}/{missions.length || 3}</span>
                     </div>
                     <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
-                      <div style={{ width: `${(completedCount / missions.length) * 100}%` }} className="h-full bg-[#1CB0F6] transition-all duration-500" />
+                      <div style={{ width: `${missions.length ? (completedCount / missions.length) * 100 : 0}%` }} className="h-full bg-[#1CB0F6] transition-all duration-500" />
                     </div>
                   </div>
                 )}
@@ -632,16 +610,22 @@ const DashboardPage: React.FC = () => {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsMissionOpen(false)} className="absolute inset-0 bg-black/40 z-[60] backdrop-blur-[2px]" />
               <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} className="absolute bottom-0 left-0 right-0 bg-white rounded-t-[32px] z-[70] p-8 shadow-2xl">
                 <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6" />
-                <h3 className="text-2xl font-black mb-6 flex items-center gap-2 text-gray-800">오늘의 미션 <span className="text-[#1CB0F6]">{completedCount}/{missions.length}</span></h3>
+                <h3 className="text-2xl font-black mb-6 flex items-center gap-2 text-gray-800">오늘의 미션 <span className="text-[#1CB0F6]">{completedCount}/{missions.length || 3}</span></h3>
                 <div className="flex flex-col gap-4">
                   {missions.map((mission) => (
                     <div key={mission.id} className={`flex items-center gap-4 p-5 rounded-2xl border-2 ${mission.current >= mission.goal ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 border-gray-50'}`}>
-                      <span className="text-3xl">{mission.icon}</span>
+                      <button
+                        type="button"
+                        onClick={() => completeMission(mission.index)}
+                        disabled={mission.current >= mission.goal}
+                        className={`w-10 h-10 shrink-0 rounded-full border-2 flex items-center justify-center font-black transition-all ${mission.current >= mission.goal ? 'bg-[#1CB0F6] border-[#1CB0F6] text-white' : 'bg-white border-gray-300 text-gray-300 active:scale-95'}`}
+                        aria-label={mission.current >= mission.goal ? '완료된 미션' : '미션 완료'}
+                      >
+                        {mission.current >= mission.goal ? '✓' : ''}
+                      </button>
                       <div className="flex-1">
                         <p className={`font-black text-sm ${mission.current >= mission.goal ? 'text-[#1CB0F6]' : 'text-gray-500'}`}>{mission.title}</p>
-                        <div className="w-full h-2 bg-gray-200 rounded-full mt-2 overflow-hidden">
-                          <div style={{ width: `${(mission.current / mission.goal) * 100}%` }} className={`h-full transition-all duration-700 ${mission.current >= mission.goal ? 'bg-[#1CB0F6]' : 'bg-gray-300'}`} />
-                        </div>
+                        <p className="text-[11px] font-bold text-gray-400 mt-1">{mission.current >= mission.goal ? '완료됨' : '완료했다면 왼쪽 체크를 눌러주세요'}</p>
                       </div>
                     </div>
                   ))}

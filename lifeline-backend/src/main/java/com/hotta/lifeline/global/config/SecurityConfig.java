@@ -55,7 +55,10 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOriginPatterns(List.of(
+                "http://localhost",
                 "http://localhost:*",
+                "https://localhost",
+                "https://localhost:*",
                 "http://127.0.0.1:*",
                 "http://10.*:*",
                 "http://172.16.*:*",
@@ -75,6 +78,9 @@ public class SecurityConfig {
                 "http://172.30.*:*",
                 "http://172.31.*:*",
                 "http://192.168.*:*",
+                "http://192.168.35.145",
+                "http://192.168.35.145:*",
+                "ionic://localhost",
                 "capacitor://localhost"
         ));
         

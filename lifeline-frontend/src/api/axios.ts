@@ -45,6 +45,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       console.error('Authentication error: login has expired.');
+      useUserStore.getState().setLogout();
       window.location.href = '/auth?mode=login';
     }
     return Promise.reject(error);
