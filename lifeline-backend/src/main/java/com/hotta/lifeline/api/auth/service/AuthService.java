@@ -2,6 +2,7 @@ package com.hotta.lifeline.api.auth.service;
 
 import com.hotta.lifeline.api.auth.dto.AuthDto;
 import com.hotta.lifeline.domain.mission.DailyMission;
+import com.hotta.lifeline.domain.mission.MissionType;
 import com.hotta.lifeline.domain.survival.Survival;
 import com.hotta.lifeline.domain.user.User;
 import com.hotta.lifeline.domain.user.UserRepository;
@@ -49,6 +50,7 @@ public class AuthService {
             DailyMission mission = DailyMission.builder()
                     .user(user)
                     .missionIndex(i)
+                    .missionType(MissionType.values()[i])
                     .build();
             user.getDailyMissions().add(mission);
         }

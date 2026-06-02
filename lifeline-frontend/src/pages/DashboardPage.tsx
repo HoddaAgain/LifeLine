@@ -41,6 +41,10 @@ interface InitData {
   survivalStreak?: number;
   isTutorialCompleted?: boolean;
   missionStatuses?: boolean[];
+  missions?: Array<{
+    index?: number;
+    isCleared?: boolean;
+  }>;
 }
 
 const WidgetBridge = registerPlugin<WidgetBridgePlugin>('WidgetBridge');
@@ -122,7 +126,19 @@ const DashboardPage: React.FC = () => {
     queryKey: ['userInit', user?.userId],
     queryFn: async () => {
       const res = await api.get('/api/v1/init');
-      return res.data.data; // { hasCheckedInToday, survivalStreak, survivalUpdatedAt, isTutorialCompleted, missionStatuses }
+      const data = res.data.data ?? {};
+      const missionStatuses = Array.isArray(data.missionStatuses)
+        ? data.missionStatuses
+        : Array.isArray(data.missions)
+          ? data.missions.reduce((statuses: boolean[], mission: { index?: number; isCleared?: boolean }) => {
+              if (typeof mission.index === 'number') {
+                statuses[mission.index] = Boolean(mission.isCleared);
+              }
+              return statuses;
+            }, [])
+          : [];
+
+      return { ...data, missionStatuses };
     },
     enabled: !!user?.userId,
     staleTime: 1000 * 30,

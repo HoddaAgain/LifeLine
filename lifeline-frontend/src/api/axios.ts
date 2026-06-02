@@ -2,20 +2,24 @@ import axios from 'axios';
 import { Capacitor } from '@capacitor/core';
 import { useUserStore } from '../store/useUserStore';
 
-const ANDROID_NATIVE_API_URL = 'http://10.120.54.116:8080';
 const WEB_LOCAL_API_URL = 'http://localhost:8080';
-const DEVICE_LAN_API_URL = 'http://10.120.54.116:8080';
+const ANDROID_EMULATOR_API_URL = 'http://10.0.2.2:8080';
 
 export const getBaseURL = () => {
+  const envBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envBaseUrl) {
+    return envBaseUrl;
+  }
+
   if (Capacitor.isNativePlatform()) {
-    return ANDROID_NATIVE_API_URL;
+    return import.meta.env.VITE_ANDROID_API_BASE_URL || ANDROID_EMULATOR_API_URL;
   }
 
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return WEB_LOCAL_API_URL;
   }
 
-  return DEVICE_LAN_API_URL;
+  return `${window.location.protocol}//${window.location.hostname}:8080`;
 };
 
 const api = axios.create({
