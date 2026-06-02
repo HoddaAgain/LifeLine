@@ -570,10 +570,9 @@ const DashboardPage: React.FC = () => {
                 {user?.name?.[0]}
               </div>
               <h3 className={`${isEasyMode ? 'text-3xl' : 'text-2xl'} font-black mb-6`}>{user?.name}</h3>
-              <div className="grid grid-cols-3 gap-4 w-full border-y-2 border-gray-50 py-8 text-center">
+              <div className="grid grid-cols-2 gap-4 w-full border-y-2 border-gray-50 py-8 text-center">
                 <div className="flex flex-col"><span className="font-black text-orange-400 text-xl">{user?.diaryStreak || 0}</span><span className="text-[10px] font-black text-gray-400">STREAK</span></div>
-                <div className="flex flex-col border-x-2 border-gray-50"><span className="font-black text-blue-400 text-xl">500</span><span className="text-[10px] font-black text-gray-400">MESO</span></div>
-                <div className="flex flex-col"><span className="font-black text-green-500 text-xl">{diaryHook.diaries.length}</span><span className="text-[10px] font-black text-gray-400">DIARIES</span></div>
+                <div className="flex flex-col border-l-2 border-gray-50"><span className="font-black text-green-500 text-xl">{diaryHook.diaries.length}</span><span className="text-[10px] font-black text-gray-400">DIARIES</span></div>
               </div>
             </div>
           )}

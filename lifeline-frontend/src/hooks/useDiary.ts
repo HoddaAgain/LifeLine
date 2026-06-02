@@ -19,8 +19,13 @@ export const useDiary = (showToast: (msg: string, type?: 'success' | 'error' | '
   const itemsPerPage = 5;
 
   // 데이터 불러오기 
-  const fetchDiaries = useCallback(async () => {
+  const fetchDiaries = useCallback(async (options?: { silent?: boolean }) => {
     if (!isLoggedIn) {
+      setIsLoading(false);
+      return;
+    }
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      if (!options?.silent) showToast('네트워크 연결을 확인해주세요.', 'error');
       setIsLoading(false);
       return;
     }
@@ -44,7 +49,7 @@ export const useDiary = (showToast: (msg: string, type?: 'success' | 'error' | '
       }
     } catch (error: any) {
       if (error.response?.status === 401 || error.response?.status === 403) setLogout();
-      showToast('데이터를 불러오는데 실패했습니다.', 'error');
+      if (!options?.silent) showToast('데이터를 불러오는데 실패했습니다.', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -58,7 +63,9 @@ export const useDiary = (showToast: (msg: string, type?: 'success' | 'error' | '
     if (!isLoggedIn) return;
 
     const refreshDiaries = () => {
-      fetchDiaries();
+      if (document.visibilityState !== 'visible') return;
+      if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+      fetchDiaries({ silent: true });
     };
 
     const handleVisibilityChange = () => {
@@ -71,13 +78,10 @@ export const useDiary = (showToast: (msg: string, type?: 'success' | 'error' | '
     window.addEventListener('pageshow', refreshDiaries);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    const syncTimer = window.setInterval(refreshDiaries, 15000);
-
     return () => {
       window.removeEventListener('focus', refreshDiaries);
       window.removeEventListener('pageshow', refreshDiaries);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.clearInterval(syncTimer);
     };
   }, [fetchDiaries, isLoggedIn]);
 

@@ -126,6 +126,52 @@ const AuthPage: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const formatPhoneNumber = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 11);
+
+    if (digits.startsWith('02')) {
+      if (digits.length <= 2) return digits;
+      if (digits.length <= 5) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+      if (digits.length <= 9) return `${digits.slice(0, 2)}-${digits.slice(2, 5)}-${digits.slice(5)}`;
+      return `${digits.slice(0, 2)}-${digits.slice(2, 6)}-${digits.slice(6)}`;
+    }
+
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+    return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+  };
+
+  const getValidationMessage = () => {
+    const userIdPattern = /^[a-zA-Z0-9_]{4,20}$/;
+    const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d).{8,20}$/;
+    const namePattern = /^[가-힣a-zA-Z\s]{2,20}$/;
+    const koreanPhonePattern = /^(01[016789]-\d{3,4}-\d{4}|02-\d{3,4}-\d{4}|0[3-9]\d-\d{3,4}-\d{4})$/;
+    const today = new Date();
+    const birthDate = new Date(formData.birthDate);
+
+    if (!userIdPattern.test(formData.userId)) {
+      return '아이디는 영문, 숫자, 밑줄(_)로 4~20자 입력해주세요.';
+    }
+
+    if (!passwordPattern.test(formData.password)) {
+      return '비밀번호는 영문과 숫자를 포함해 8~20자로 입력해주세요.';
+    }
+
+    if (!isLoginView && !namePattern.test(formData.name.trim())) {
+      return '이름은 숫자나 특수문자 없이 한글 또는 영문 2~20자로 입력해주세요.';
+    }
+
+    if (!isLoginView && !koreanPhonePattern.test(formData.emergencyContact)) {
+      return '비상연락처는 010-1234-5678 형식으로 입력해주세요.';
+    }
+
+    if (!isLoginView && (!formData.birthDate || Number.isNaN(birthDate.getTime()) || birthDate >= today)) {
+      return '생년월일은 오늘보다 이전 날짜로 입력해주세요.';
+    }
+
+    return null;
+  };
+
   const getMissingFieldMessage = () => {
     const requiredFields = isLoginView
       ? [
@@ -153,6 +199,12 @@ const AuthPage: React.FC = () => {
     const missingMessage = getMissingFieldMessage();
     if (missingMessage) {
       showToast(missingMessage, 'error');
+      return;
+    }
+
+    const validationMessage = getValidationMessage();
+    if (validationMessage) {
+      showToast(validationMessage, 'error');
       return;
     }
 
@@ -263,7 +315,7 @@ const AuthPage: React.FC = () => {
             <div className="flex flex-col gap-4 mt-2">
               <Input label="이름" type="text" value={formData.name} onChange={(val) => setFormData({ ...formData, name: val })} placeholder="본명" />
               <Input label="닉네임" type="text" value={formData.nickname} onChange={(val) => setFormData({ ...formData, nickname: val })} placeholder="사용할 닉네임" />
-              <Input label="비상연락처" type="text" value={formData.emergencyContact} onChange={(val) => setFormData({ ...formData, emergencyContact: val })} placeholder="010-0000-0000" />
+              <Input label="비상연락처" type="tel" value={formData.emergencyContact} onChange={(val) => setFormData({ ...formData, emergencyContact: formatPhoneNumber(val) })} placeholder="010-0000-0000" />
               <Input label="생년월일" type="date" value={formData.birthDate} onChange={(val) => setFormData({ ...formData, birthDate: val })} />
               
               <div className="flex flex-col gap-2">
