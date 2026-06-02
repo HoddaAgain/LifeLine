@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 
 
@@ -69,6 +70,7 @@ const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const lottieRef = useRef<LottieRefCurrentProps>(null);
+  const lastBackPressedAt = useRef(0);
   
   // Zustand Store
   const { 
@@ -266,6 +268,67 @@ const DashboardPage: React.FC = () => {
   }, [isInitLoading, hasCheckedIn, checkInMutation.isPending, checkInMutation.isSuccess]);
 
   const diaryHook = useDiary(showToast);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const setupBackButton = async () => {
+      const handle = await CapacitorApp.addListener('backButton', () => {
+        if (diaryHook.isDeleteConfirm) {
+          diaryHook.setIsDeleteConfirm(false);
+          return;
+        }
+
+        if (diaryHook.selectedDiary) {
+          diaryHook.setSelectedDiary(null);
+          return;
+        }
+
+        if (diaryHook.isWriting) {
+          diaryHook.setIsWriting(false);
+          return;
+        }
+
+        if (isMissionOpen) {
+          setIsMissionOpen(false);
+          return;
+        }
+
+        if (activeTab !== 'main') {
+          setActiveTab('main');
+          return;
+        }
+
+        const now = Date.now();
+        if (now - lastBackPressedAt.current < 2000) {
+          CapacitorApp.exitApp();
+          return;
+        }
+
+        lastBackPressedAt.current = now;
+        showToast('한 번 더 누르면 앱이 종료됩니다.', 'info');
+      });
+
+      return handle;
+    };
+
+    let cleanup: (() => void) | undefined;
+    setupBackButton().then((handle) => {
+      cleanup = () => handle.remove();
+    });
+
+    return () => cleanup?.();
+  }, [
+    activeTab,
+    diaryHook.isDeleteConfirm,
+    diaryHook.isWriting,
+    diaryHook.selectedDiary,
+    diaryHook.setIsDeleteConfirm,
+    diaryHook.setIsWriting,
+    diaryHook.setSelectedDiary,
+    isMissionOpen,
+    showToast,
+  ]);
 
   useEffect(() => {
     if (activeTab === 'diary') {

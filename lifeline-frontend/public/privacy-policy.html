@@ -67,10 +67,25 @@
       a {
         color: #0284c7;
       }
+
+      .back-button {
+        display: inline-flex;
+        align-items: center;
+        margin-bottom: 18px;
+        border: 0;
+        border-radius: 8px;
+        background: #1cb0f6;
+        color: #ffffff;
+        padding: 10px 14px;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+      }
     </style>
   </head>
   <body>
     <main>
+      <button class="back-button" type="button" onclick="goBackToApp()">이전 화면으로</button>
       <article>
         <h1>LifeLine 개인정보처리방침</h1>
         <p class="meta">시행일: 2026년 6월 2일</p>
@@ -154,5 +169,15 @@
         </p>
       </article>
     </main>
+    <script>
+      function goBackToApp() {
+        if (window.history.length > 1) {
+          window.history.back();
+          return;
+        }
+
+        window.location.href = "/auth?mode=signup";
+      }
+    </script>
   </body>
 </html>

@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { useUserStore } from '../store/useUserStore';
 import { authapi } from '../api/authapi';
 import { jwtDecode } from 'jwt-decode'; // 토큰 해독 라이브러리 추가
@@ -18,6 +20,7 @@ const AuthPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [isLoginView, setIsLoginView] = useState(searchParams.get('mode') !== 'signup');
   const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [isPrivacyDetailOpen, setIsPrivacyDetailOpen] = useState(false);
   const [hasAcceptedTerms, setHasAcceptedTerms] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -31,6 +34,92 @@ const AuthPage: React.FC = () => {
   });
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  useEffect(() => {
+    setIsLoginView(searchParams.get('mode') !== 'signup');
+  }, [searchParams]);
+
+  useEffect(() => {
+    const syncTermsState = () => {
+      setIsTermsOpen(window.location.hash === '#terms');
+    };
+
+    syncTermsState();
+    window.addEventListener('popstate', syncTermsState);
+
+    return () => window.removeEventListener('popstate', syncTermsState);
+  }, []);
+
+  const openTerms = () => {
+    setIsTermsOpen(true);
+    if (window.location.hash !== '#terms') {
+      window.history.pushState(
+        { termsOpen: true },
+        '',
+        `${window.location.pathname}${window.location.search}#terms`
+      );
+    }
+  };
+
+  const closeTerms = () => {
+    setIsPrivacyDetailOpen(false);
+
+    if (window.location.hash === '#terms') {
+      window.history.back();
+      return;
+    }
+
+    setIsTermsOpen(false);
+  };
+
+  const moveToAuthMode = (mode: 'login' | 'signup') => {
+    if (window.location.hash === '#terms') {
+      window.history.back();
+    }
+
+    setIsTermsOpen(false);
+    setIsPrivacyDetailOpen(false);
+    setHasAcceptedTerms(false);
+    navigate(mode === 'signup' ? '/auth?mode=signup' : '/auth?mode=login');
+  };
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const setupBackButton = async () => {
+      const handle = await CapacitorApp.addListener('backButton', () => {
+        if (isPrivacyDetailOpen) {
+          setIsPrivacyDetailOpen(false);
+          return;
+        }
+
+        if (isTermsOpen) {
+          setIsTermsOpen(false);
+          if (window.location.hash === '#terms') {
+            window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+          }
+          return;
+        }
+
+        if (!isLoginView) {
+          setHasAcceptedTerms(false);
+          navigate('/auth?mode=login');
+          return;
+        }
+
+        CapacitorApp.exitApp();
+      });
+
+      return handle;
+    };
+
+    let cleanup: (() => void) | undefined;
+    setupBackButton().then((handle) => {
+      cleanup = () => handle.remove();
+    });
+
+    return () => cleanup?.();
+  }, [isLoginView, isPrivacyDetailOpen, isTermsOpen, navigate]);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -69,7 +158,7 @@ const AuthPage: React.FC = () => {
 
     if (!isLoginView && !hasAcceptedTerms) {
       showToast('개인정보 수집 및 이용에 동의해주세요.', 'error');
-      setIsTermsOpen(true);
+      openTerms();
       return;
     }
 
@@ -135,6 +224,7 @@ const AuthPage: React.FC = () => {
         await authapi.register(signUpData);
         showToast('회원가입 성공! 로그인해주세요.', 'success');
         setIsLoginView(true);
+        navigate('/auth?mode=login', { replace: true });
       }
     } catch (error: any) {
       console.error("인증 에러:", error);
@@ -200,7 +290,7 @@ const AuthPage: React.FC = () => {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setIsTermsOpen(true)}
+                    onClick={openTerms}
                     className="shrink-0 rounded-xl border-2 border-[#1CB0F6] bg-white px-4 py-2 text-sm font-black text-[#1CB0F6] transition-all hover:bg-[#DDF4FF]"
                   >
                     약관 보기
@@ -217,11 +307,7 @@ const AuthPage: React.FC = () => {
 
         <div className="mt-8 text-center border-t-2 border-gray-50 pt-6">
           <button
-            onClick={() => {
-              setIsLoginView(!isLoginView);
-              setIsTermsOpen(false);
-              setHasAcceptedTerms(false);
-            }}
+            onClick={() => moveToAuthMode(isLoginView ? 'signup' : 'login')}
             className="text-gray-400 font-black hover:text-[#1CB0F6] transition-colors"
           >
             {isLoginView ? '아직 계정이 없으신가요?' : '이미 계정이 있나요? 로그인'}
@@ -243,67 +329,110 @@ const AuthPage: React.FC = () => {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.92, y: 20 }}
             >
-              <h2 className="text-2xl font-black text-[#1CB0F6]">개인정보 수집 및 이용 안내</h2>
-              <p className="mt-2 text-sm font-bold leading-6 text-gray-500">
-                LifeLine은 회원가입과 서비스 제공을 위해 아래 정보를 서버에 저장하고 사용합니다.
-              </p>
-              <div className="mt-4 max-h-[340px] overflow-y-auto rounded-2xl bg-[#F7F9FA] p-4 text-sm font-bold leading-6 text-gray-600">
-                <section>
-                  <h3 className="font-black text-gray-800">수집하는 정보</h3>
-                  <ul className="mt-2 list-disc space-y-1 pl-5">
-                    <li>아이디, 암호화된 비밀번호, 이름</li>
-                    <li>생년월일, 비상연락처</li>
-                    <li>생존 체크인 시간, 미션 수행 상태</li>
-                    <li>작성한 일기의 제목, 내용, 감정, 날짜, 이미지 URL</li>
-                  </ul>
-                </section>
-                <section className="mt-4">
-                  <h3 className="font-black text-gray-800">사용 목적</h3>
-                  <ul className="mt-2 list-disc space-y-1 pl-5">
-                    <li>로그인 및 사용자 식별</li>
-                    <li>생존 체크인, 일기, 미션 기능 제공</li>
-                    <li>장시간 미체크 상태 확인 및 안전 알림 기능 제공</li>
-                  </ul>
-                </section>
-                <section className="mt-4">
-                  <h3 className="font-black text-gray-800">보관 및 동의</h3>
-                  <p className="mt-2">
-                    수집한 정보는 서비스 제공에 필요한 기간 동안 보관됩니다. 동의하지 않으면 회원가입을 진행할 수 없습니다.
-                  </p>
-                </section>
-                <p className="mt-4">
-                  자세한 내용은{' '}
-                  <a
-                    href="/privacy-policy.html"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-black text-[#1CB0F6] underline"
+              <div className="flex items-center gap-3">
+                {isPrivacyDetailOpen && (
+                  <button
+                    type="button"
+                    onClick={() => setIsPrivacyDetailOpen(false)}
+                    className="rounded-xl border-2 border-gray-200 px-3 py-2 text-sm font-black text-gray-500"
                   >
-                    개인정보처리방침
-                  </a>
-                  에서 확인할 수 있습니다.
+                    이전
+                  </button>
+                )}
+                <h2 className="text-2xl font-black text-[#1CB0F6]">
+                  {isPrivacyDetailOpen ? '개인정보처리방침' : '개인정보 수집 및 이용 안내'}
+                </h2>
+              </div>
+              {!isPrivacyDetailOpen && (
+                <p className="mt-2 text-sm font-bold leading-6 text-gray-500">
+                  LifeLine은 회원가입과 서비스 제공을 위해 아래 정보를 서버에 저장하고 사용합니다.
                 </p>
+              )}
+              <div className="mt-4 max-h-[340px] overflow-y-auto rounded-2xl bg-[#F7F9FA] p-4 text-sm font-bold leading-6 text-gray-600">
+                {isPrivacyDetailOpen ? (
+                  <>
+                    <p>LifeLine은 사용자의 개인정보를 중요하게 생각하며 서비스 제공에 필요한 최소한의 정보를 수집합니다.</p>
+                    <section className="mt-4">
+                      <h3 className="font-black text-gray-800">수집 항목</h3>
+                      <ul className="mt-2 list-disc space-y-1 pl-5">
+                        <li>회원가입 정보: 아이디, 암호화된 비밀번호, 이름</li>
+                        <li>사용자 안전 확인 정보: 생년월일, 비상연락처</li>
+                        <li>서비스 이용 정보: 생존 체크인 시간, 생존 상태, 미션 수행 상태</li>
+                        <li>일기 정보: 일기 제목, 내용, 감정, 작성 날짜, 이미지 URL</li>
+                      </ul>
+                    </section>
+                    <section className="mt-4">
+                      <h3 className="font-black text-gray-800">이용 목적</h3>
+                      <p className="mt-2">회원가입, 로그인, 생존 체크인, 일기 작성, 일일 미션, 안전 알림 기능 제공을 위해 사용합니다.</p>
+                    </section>
+                    <section className="mt-4">
+                      <h3 className="font-black text-gray-800">보관 및 권리</h3>
+                      <p className="mt-2">개인정보는 서비스 제공에 필요한 기간 동안 보관되며, 사용자는 정보 수정 및 삭제를 요청할 수 있습니다.</p>
+                    </section>
+                  </>
+                ) : (
+                  <>
+                    <section>
+                      <h3 className="font-black text-gray-800">수집하는 정보</h3>
+                      <ul className="mt-2 list-disc space-y-1 pl-5">
+                        <li>아이디, 암호화된 비밀번호, 이름</li>
+                        <li>생년월일, 비상연락처</li>
+                        <li>생존 체크인 시간, 미션 수행 상태</li>
+                        <li>작성한 일기의 제목, 내용, 감정, 날짜, 이미지 URL</li>
+                      </ul>
+                    </section>
+                    <section className="mt-4">
+                      <h3 className="font-black text-gray-800">사용 목적</h3>
+                      <ul className="mt-2 list-disc space-y-1 pl-5">
+                        <li>로그인 및 사용자 식별</li>
+                        <li>생존 체크인, 일기, 미션 기능 제공</li>
+                        <li>장시간 미체크 상태 확인 및 안전 알림 기능 제공</li>
+                      </ul>
+                    </section>
+                    <section className="mt-4">
+                      <h3 className="font-black text-gray-800">보관 및 동의</h3>
+                      <p className="mt-2">
+                        수집한 정보는 서비스 제공에 필요한 기간 동안 보관됩니다. 동의하지 않으면 회원가입을 진행할 수 없습니다.
+                      </p>
+                    </section>
+                    <p className="mt-4">
+                      자세한 내용은{' '}
+                      <button
+                        type="button"
+                        onClick={() => setIsPrivacyDetailOpen(true)}
+                        className="font-black text-[#1CB0F6] underline"
+                      >
+                        개인정보처리방침
+                      </button>
+                      에서 확인할 수 있습니다.
+                    </p>
+                  </>
+                )}
               </div>
-              <p className="mt-5 text-center text-base font-black text-gray-700">위 개인정보 수집 및 이용에 동의하시겠습니까?</p>
-              <div className="mt-5 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsTermsOpen(false)}
-                  className="flex-1 rounded-2xl border-2 border-gray-200 py-3 font-black text-gray-400 transition-all hover:bg-gray-50"
-                >
-                  동의하지 않음
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setHasAcceptedTerms(true);
-                    setIsTermsOpen(false);
-                  }}
-                  className="flex-1 rounded-2xl bg-[#1CB0F6] py-3 font-black text-white shadow-[0_4px_0_0_#1899D6] transition-all active:translate-y-1 active:shadow-none"
-                >
-                  동의합니다
-                </button>
-              </div>
+              {!isPrivacyDetailOpen && (
+                <>
+                  <p className="mt-5 text-center text-base font-black text-gray-700">위 개인정보 수집 및 이용에 동의하시겠습니까?</p>
+                  <div className="mt-5 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={closeTerms}
+                      className="flex-1 rounded-2xl border-2 border-gray-200 py-3 font-black text-gray-400 transition-all hover:bg-gray-50"
+                    >
+                      동의하지 않음
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHasAcceptedTerms(true);
+                        closeTerms();
+                      }}
+                      className="flex-1 rounded-2xl bg-[#1CB0F6] py-3 font-black text-white shadow-[0_4px_0_0_#1899D6] transition-all active:translate-y-1 active:shadow-none"
+                    >
+                      동의합니다
+                    </button>
+                  </div>
+                </>
+              )}
             </motion.div>
           </motion.div>
         )}
