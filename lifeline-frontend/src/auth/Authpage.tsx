@@ -351,23 +351,84 @@ const AuthPage: React.FC = () => {
               <div className="mt-4 max-h-[340px] overflow-y-auto rounded-2xl bg-[#F7F9FA] p-4 text-sm font-bold leading-6 text-gray-600">
                 {isPrivacyDetailOpen ? (
                   <>
-                    <p>LifeLine은 사용자의 개인정보를 중요하게 생각하며 서비스 제공에 필요한 최소한의 정보를 수집합니다.</p>
+                    <p className="text-xs text-gray-400">시행일: 2026년 6월 2일</p>
+                    <p className="mt-3">
+                      LifeLine은 사용자의 개인정보를 중요하게 생각하며, 서비스 제공에 필요한 최소한의 개인정보를 수집하고 안전하게 관리하기 위해 본 개인정보처리방침을 공개합니다.
+                    </p>
+                    <p className="mt-3">
+                      본 방침은 Google Play에 게시되는 LifeLine 앱과 앱에서 제공하는 생존 체크인, 일기, 미션 기능에 적용됩니다.
+                    </p>
                     <section className="mt-4">
-                      <h3 className="font-black text-gray-800">수집 항목</h3>
+                      <h3 className="font-black text-gray-800">1. 수집하는 개인정보 항목</h3>
+                      <p className="mt-2">LifeLine은 회원가입 및 서비스 제공을 위해 다음 정보를 수집할 수 있습니다.</p>
                       <ul className="mt-2 list-disc space-y-1 pl-5">
                         <li>회원가입 정보: 아이디, 암호화된 비밀번호, 이름</li>
                         <li>사용자 안전 확인 정보: 생년월일, 비상연락처</li>
                         <li>서비스 이용 정보: 생존 체크인 시간, 생존 상태, 미션 수행 상태</li>
                         <li>일기 정보: 일기 제목, 내용, 감정, 작성 날짜, 이미지 URL</li>
+                        <li>기술 정보: 앱 오류 기록, 접속 시각 등 서비스 운영에 필요한 기본 로그</li>
                       </ul>
                     </section>
                     <section className="mt-4">
-                      <h3 className="font-black text-gray-800">이용 목적</h3>
-                      <p className="mt-2">회원가입, 로그인, 생존 체크인, 일기 작성, 일일 미션, 안전 알림 기능 제공을 위해 사용합니다.</p>
+                      <h3 className="font-black text-gray-800">2. 개인정보의 이용 목적</h3>
+                      <p className="mt-2">수집한 개인정보는 다음 목적을 위해 사용됩니다.</p>
+                      <ul className="mt-2 list-disc space-y-1 pl-5">
+                        <li>회원가입, 로그인, 사용자 식별</li>
+                        <li>생존 체크인, 일기 작성, 일일 미션 등 앱 기능 제공</li>
+                        <li>장시간 미체크 상태 확인 및 안전 알림 기능 제공</li>
+                        <li>서비스 오류 확인, 부정 이용 방지, 서비스 품질 개선</li>
+                      </ul>
                     </section>
                     <section className="mt-4">
-                      <h3 className="font-black text-gray-800">보관 및 권리</h3>
-                      <p className="mt-2">개인정보는 서비스 제공에 필요한 기간 동안 보관되며, 사용자는 정보 수정 및 삭제를 요청할 수 있습니다.</p>
+                      <h3 className="font-black text-gray-800">3. 개인정보의 보관 기간</h3>
+                      <p className="mt-2">
+                        LifeLine은 서비스 제공에 필요한 기간 동안 개인정보를 보관합니다. 사용자가 계정 삭제를 요청하거나 서비스 이용 목적이 달성된 경우 관련 법령 또는 분쟁 대응을 위해 필요한 경우를 제외하고 개인정보를 삭제합니다.
+                      </p>
+                    </section>
+                    <section className="mt-4">
+                      <h3 className="font-black text-gray-800">4. 개인정보의 제3자 제공</h3>
+                      <p className="mt-2">
+                        LifeLine은 사용자의 개인정보를 사용자의 동의 없이 외부에 판매하거나 제공하지 않습니다. 다만 법령에 따른 요청이 있거나 사용자가 사전에 동의한 경우에는 예외로 합니다.
+                      </p>
+                    </section>
+                    <section className="mt-4">
+                      <h3 className="font-black text-gray-800">5. 개인정보 처리 위탁 및 외부 서비스</h3>
+                      <p className="mt-2">
+                        서비스 운영 과정에서 서버, 데이터베이스, 앱 배포 플랫폼 등 외부 서비스가 사용될 수 있습니다. 외부 서비스를 사용하는 경우 LifeLine은 개인정보가 안전하게 처리되도록 필요한 조치를 취합니다.
+                      </p>
+                    </section>
+                    <section className="mt-4">
+                      <h3 className="font-black text-gray-800">6. 사용자의 권리</h3>
+                      <p className="mt-2">사용자는 본인의 개인정보에 대해 열람, 수정, 삭제, 처리 정지를 요청할 수 있습니다.</p>
+                      <ul className="mt-2 list-disc space-y-1 pl-5">
+                        <li>계정 정보 수정 또는 삭제 요청</li>
+                        <li>일기 등 사용자가 작성한 콘텐츠 삭제 요청</li>
+                        <li>개인정보 처리에 대한 문의 또는 동의 철회 요청</li>
+                      </ul>
+                    </section>
+                    <section className="mt-4">
+                      <h3 className="font-black text-gray-800">7. 개인정보 보호 조치</h3>
+                      <p className="mt-2">
+                        LifeLine은 비밀번호를 암호화하여 저장하고, 인증이 필요한 API에는 토큰 기반 인증을 적용합니다. 또한 개인정보 접근을 필요한 범위로 제한하기 위해 노력합니다.
+                      </p>
+                    </section>
+                    <section className="mt-4">
+                      <h3 className="font-black text-gray-800">8. 아동의 개인정보</h3>
+                      <p className="mt-2">
+                        LifeLine은 관련 법령에서 별도 보호가 필요한 아동의 개인정보를 고의로 수집하지 않습니다. 아동의 개인정보가 수집된 사실을 확인한 경우 삭제 등 필요한 조치를 취합니다.
+                      </p>
+                    </section>
+                    <section className="mt-4">
+                      <h3 className="font-black text-gray-800">9. 개인정보처리방침 변경</h3>
+                      <p className="mt-2">
+                        본 개인정보처리방침은 법령, 서비스 내용, 개인정보 처리 방식의 변경에 따라 수정될 수 있습니다. 중요한 변경이 있는 경우 앱 또는 서비스 화면을 통해 안내합니다.
+                      </p>
+                    </section>
+                    <section className="mt-4">
+                      <h3 className="font-black text-gray-800">10. 문의</h3>
+                      <p className="mt-2">
+                        개인정보 처리와 관련한 문의는 Google Play 스토어에 등록된 개발자 연락처 또는 LifeLine 운영팀에 문의해 주시기 바랍니다.
+                      </p>
                     </section>
                   </>
                 ) : (
