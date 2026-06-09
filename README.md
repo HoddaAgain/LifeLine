@@ -12,7 +12,7 @@
   * **저자**: 권영훈, 이호준, 강신혁, 하유빈, 김삼문(지도교수)
   * **수상 일자**: 2026년 5월 22일
 
-<img src="https://github.com/user-attachments/assets/47010b1a-48ab-42bc-9af3-c31432040260" width="60%" alt="2026년도 한국정보통신학회 춘계학술대회 학생우수논문상 상장"/>
+<img src="https://github.com/user-attachments/assets/47010b1a-48ab-42bc-9af3-c31432040260" width="100%" alt="2026년도 한국정보통신학회 춘계학술대회 학생우수논문상 상장"/>
 
 ---
 
@@ -57,6 +57,11 @@
 클라이언트 환경에 구애받지 않는 고가용성 플랫폼 제공을 위해 **React 기반의 PWA 프론트엔드**와 **Spring Boot 기반의 RESTful API 백엔드**가 분리된 Decoupled 아키텍처를 채택하였습니다.
 
 <img width="1773" height="522" alt="System Architecture" src="https://github.com/user-attachments/assets/0f48488d-454c-4997-8b41-ac0ad78ed86e" />
+
+### 🗄 데이터베이스 스키마 설계 (ERD)
+유기적인 데이터 관리를 위해 `User` 테이블을 중심으로 `Diary_missions(미션)`, `Diary(일기)`, `Survivals(생존 신호 로그)`, `Diary_Image` 등 **5개 핵심 테이블** 단위로 정규화된 스키마를 구성하여 확장성을 확보했습니다.
+
+<img width="830" height="502" alt="Image" src="https://github.com/user-attachments/assets/4bffe9e0-f1e8-4417-8579-16c8679a0614" />
 
 ### 🛠 수행 과정에서의 시행착오 및 최적화
 
