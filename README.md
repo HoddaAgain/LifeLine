@@ -5,88 +5,105 @@
 
 <br>
 
+## 🏆 주요 성과 및 수상 실적
+* **한국정보통신학회(KIICE) 2026년 춘계종합학술대회 학생우수논문상 수상** (제 26-100호)
+  * **논문 제목**: 1인 가구를 위한 골든타임 확보 및 안전망 구축 플랫폼
+  * **저자**: 권영훈, 이호준, 강신혁, 하유빈, 김삼문(지도교수)
+  * **수상 일자**: 2026년 5월 22일
+
+<img src="https://github.com/user-attachments/assets/47010b1a-48ab-42bc-9af3-c31432040260" width="60%" alt="2026년도 한국정보통신학회 춘계학술대회 학생우수논문상 상장"/>
+
+---
+
 ## 📌 프로젝트 개요
-최근 국내 1인 가구는 전체 가구의 36%를 초과하여 **800만 가구**를 돌파하며 역대 최고치를 기록하고 있습니다. <br>
-특히 고령 1인 가구의 증가와 함께 경제적 불안정 및 사회적 고립(Social Isolation)으로 인한 **'고독사(Solitary Death)'** 문제가 심각한 사회 현안으로 대두되고 있습니다. 
-기존의 전력량 모니터링이나 IoT 센서 기반 감시 시스템, AI 안부 전화 서비스는 사용자를 '감시'하는 데 치중하여 심리적 거부감을 유발하고, 오히려 사회적 고립을 심화시키는 한계가 있었습니다. 
-**LifeLine**은 이러한 문제를 해결하기 위해 사용자가 주체적으로 자신의 안위를 알리는 **'능동적 체크인(Active Check-in)'** 모델을 도입하여 사회적 단절을 예방하고자 합니다.
+최근 국내 1인 가구 비율은 매년 가파르게 증가하여 전체 가구의 **34%를 돌파**하였습니다. 특히 급속한 고령화와 맞물려 경제적 불안정 및 사회적 고립으로 인한 **'고독사(Solitary Death)'** 문제가 심각한 사회적 비극으로 대두되고 있습니다.
+
+기존 지자체 등에서 도입한 물리적 IoT 센서(움직임 감지, 전력량 체크 등)는 고립 가구에게 상시 '감시받고 있다'는 심리적 불쾌감과 이탈을 유발하며, 기계적인 AI 안부 전화 역시 일방적인 조사로 인식되어 수신을 방치하는 한계가 있었습니다.
+
+**LifeLine**은 이러한 문제를 해결하기 위해 사용자가 주체적이고 자발적으로 자신의 안전을 알리는 **'능동적 체크인(Active Check-in)'** 모델과 **게이미피케이션**을 도입하여 고독사 사각지대를 해소하는 실효성 있는 상시 모니터링 생태계를 제안합니다.
 
 <br>
 
 ## ✨ 핵심 기능 및 특징
 
 ### 1. 세대별 맞춤형 이중 인터페이스 (Dual-Mode UI)
-- **Easy Mode (고령층 대상)**: 스마트 기기 조작이 서툰 사용자를 위해 직관적이고 거대한 단일 버튼 형태의 UI 제공
-- **Normal Mode (청·장년층 대상)**: '하루 일기 작성' 및 '카나리아 미션' 등 **게이미피케이션(Gamification)** 요소를 결합하여 자발적 참여 동기 부여
+* **Easy Mode (고령층 대상)**: 스마트 기기 조작이 서툰 초고령층을 위해 복잡한 기능을 배제하고, 직관적이고 거대한 단일 버튼 형태의 **'원터치 생존 신고'** UI를 제공합니다.
+* **Normal Mode (청·장년층 대상)**: '하루 일기 작성' 및 **'카나리아 미션'**(산책 사진 인증, 물 마시기, 계단 오르기 등 일상적 확약) 등의 재미 요소를 결합하여 청·장년층 고립 가구의 지속적이고 자발적인 참여를 유도합니다.
 
 ### 2. 골든타임 확보를 위한 백그라운드 스케줄링
-- 사용자의 활동 로그를 기반으로 24시간/48시간 미활동 시 사용자에게 경고(Warning) 알림 발생
-- 48시간 도달 시 사전에 등록된 비상 연락처 및 복지기관으로 **자동 긴급 알림** 발송 (초기 MVP: Email, 향후 SMS/Push 확장 구조)
+* 사용자의 활동 로그(생존 신고 버튼 클릭, 일기 작성, 미션 수행)를 정밀하게 추적하여 비활동 주기를 계산합니다.
+* **24시간 미활동 (경고 단계)**: `alert_status`를 `WARNING`으로 변경하고, FCM 기반 디바이스 푸시 알림을 트리거하여 자발적 체크인을 재유도합니다.
+* **48시간 미활동 (위험 단계)**: 임계값 초과로 판단하여 단계를 `CRITICAL`로 격상하고, `JavaMailSender` 모듈을 통해 사전에 등록된 비상 연락망(가족, 지자체 복지사 및 대시보드)으로 **SOS 위험 메일을 즉시 발송**합니다.
 
 ### 3. 프라이버시 중심 아키텍처 (Privacy-First)
-- 위치 추적 및 과도한 민감 정보 수집 전면 배제
-- Device Token(UUID) 및 최소 식별 정보(Magic Link 등)만을 활용하여 철저한 익명성 보장
+* 사생활 침해 우려가 큰 위치 추적(GPS) 및 과도한 민감 정보 수집을 전면 배제합니다.
+* 최소한의 식별 정보와 디바이스 토큰(UUID)만을 활용하여 철저한 익명성을 보장합니다.
 
 ### 4. 투트랙(Two-Track) 접근성 및 배포 전략
-- **Web (PWA)**: 앱 설치에 거부감이 있는 고령층을 위해 QR코드/링크 클릭만으로 즉시 접근 가능한 무설치 PWA 환경 제공
-- **App (하이브리드)**: 100% 수신이 보장되어야 하는 **'골든타임 푸시 알림(FCM)'** 의 안정성을 확보하고, 실제 시장 런칭을 위해 구글 플레이 스토어(Capacitor/WebView 기반) 정식 출시 병행
+* **Web (PWA)**: 별도의 스토어 다운로드와 업데이트가 필요 없는 **Progressive Web App** 방식으로 개발하여 고령층의 설치 장벽을 0%로 낮추고, 오프라인 지원(Service Worker)을 통해 네트워크 불안정 시에도 연속성을 확보합니다.
+* **App (하이브리드 패키징)**: 푸시 알림(FCM) 수신 안정성을 극대화하기 위해 `Capacitor` 환경을 활용한 하이브리드 앱 패키징을 수행하고 구글 플레이 콘솔 등록을 진행하였습니다.
 
 <br>
 
-## ⚙️ 시스템 아키텍처 및 기술 최적화 (Architecture & Optimization)
-### 💡 무중단 위기 감지 스케줄러 파이프라인
-<img width="1773" height="522" alt="Image" src="https://github.com/user-attachments/assets/0f48488d-454c-4997-8b41-ac0ad78ed86e" />
+## ⚙️ 시스템 아키텍처 및 수행 과정의 시행착오
 
-### - 파이프라인 동작 프로세스 <br>
-• **Trigger (능동적 체크인):** 사용자가 앱 내에서 생존 신고 버튼(이지 모드)을 누르거나 카나리아 미션 수행 및 하루 일기(노말 모드)를 작성하면, 해당 시점이 API를 통해 DB의 last_survival_time으로 갱신됩니다. <br>
-• **Background Scan (@Scheduled):** Spring Boot 백엔드에 내장된 이벤트 스케줄러가 설정된 주기(예: 매분)마다 DB를 스캔합니다. 이때 JPA 복합 인덱스를 타게 되어 서버 부하 없이 대상자만 빠르게 필터링합니다. <br>
-• **Action (조건별 알림 분기):** <br>
-- 24시간 미활동: 사용자 본인의 디바이스로 1차 경고(Warning) 푸시 알림을 발송하여 체크인을 유도합니다. <br>
-- 48시간 미활동: 1차 경고 후에도 반응이 없을 경우 골든타임 위험으로 간주하고, 사전에 등록된 비상 연락망(가족, 복지기관)으로 즉시 긴급 알림(Email/SMS)을 발송합니다. <br>
+### 💡 전체 시스템 아키텍처 (Decoupled Structure)
+클라이언트 환경에 구애받지 않는 고가용성 플랫폼 제공을 위해 **React 기반의 PWA 프론트엔드**와 **Spring Boot 기반의 RESTful API 백엔드**가 분리된 Decoupled 아키텍처를 채택하였습니다.
 
-### 💡 JPA 복합 인덱스(Composite Index) 튜닝
+<img width="1773" height="522" alt="System Architecture" src="https://github.com/user-attachments/assets/0f48488d-454c-4997-8b41-ac0ad78ed86e" />
 
-• **문제**: 매분 1만 명 이상의 유저 활동 로그를 스캔하는 스케줄러 로직상, 단순 풀스캔(Full-Scan) 발생 시 서버 CPU 과부하 및 DB 성능 저하 우려. <br>
-• **해결**: `alert_status(경고 발송 여부)`와 `last_survival_time(마지막 접속 시간)`을 묶어 **복합 인덱스**로 설정. <br>
-• **B-Tree 구조 최적화**: 범위 조건(Range)인 시간보다 동등 조건(=)인 발송 여부를 선행 컬럼으로 배치(`@Index(columnList = "alert_status, last_survival_time")`)하여 랜덤 액세스를 0에 가깝게 줄이고 조회 속도를 극대화함.
+### 🛠 수행 과정에서의 시행착오 및 최적화
+
+#### 1. 위기 감지 스케줄러 DB 쿼리 성능 개선 (JPA 복합 인덱스 튜닝)
+* **문제점**: 매분 1만 명 이상의 대규모 유저 활동 로그를 스캔하는 백그라운드 데몬(`@Scheduled`) 특성상, 단순 풀스캔(Full-Scan) 발생 시 서버 CPU 과부하 및 DB 성능 저하가 우려되었습니다.
+* **해결 및 최적화**: 조건절에 최적화된 복합 인덱스(Composite Index) 구조를 설계했습니다. 범위 조건(Range)인 시간보다 동등 조건(=)인 발송 여부를 선행 컬럼으로 배치(`alert_status, last_survival_time`)하여 불필요한 데이터 블록 접근(Random Access)을 0에 가깝게 줄이고 스케줄러 스캔 속도를 대폭 최적화했습니다.
+
+#### 2. Spring Security 기반 이중 권한 제어 도입 (보안성 강화)
+* **문제점**: 프론트엔드 단의 모드 제어에만 의존할 경우, 악의적인 API 우회 요청(이지 모드 사용자가 노말 모드 미션/일기 API에 직접 접근 등)에 취약할 수 있는 보안 맹점이 존재했습니다.
+* **해결 및 최적화**: 백엔드 API 라우터 진입 단계부터 `Spring Security Filter Chain`을 경유하도록 설정했습니다. JWT 인증 토큰 내에 포함된 Custom Claim(`user_mode`)을 파싱하여, '노말 모드 전용 기능'에 대한 이중 권한 검증(Authorization)을 수행함으로써 서버 측 방어 계층을 확층했습니다.
 
 <br>
 
-### 🚀 배포 및 런칭 로드맵 (Roadmap)
+## 📱 애플리케이션 결과물 및 시연 영상
 
-• **MVP 개발**: 핵심 로직(생존 스케줄러, 일기장) 검증 및 PWA 테스트 배포 <br>
-• **하이브리드 패키징**: 네이티브 기능(FCM 푸시, 로컬 캐시) 연동 및 구글 플레이 콘솔 등록 <br>
-• **마켓 런칭 및 운영**: 구글 플레이 스토어 정식 출시, 초기 유저 피드백 수집 및 버그 픽스 <br>
+| 이지 모드 (Easy Mode) | 노말 모드 (Normal Mode) | 하루 일기 및 카나 미션 |
+| :---: | :---: | :---: |
+| ![이지 모드](https://github.com/user-attachments/assets/0f48488d-454c-4997-8b41-ac0ad78ed86e)  | ![노말 모드] | ![미션 및 일기] |
+
+* 📺 **[이지 모드 시연 영상]** 고령층 및 디지털 취약계층을 위한 원터치 생존 신고 UI 구동 프로세스 ([YouTube Shorts 보기](https://youtube.com/shorts/ia3DMRVpRow?si=_TyP-ubURBuO2DY6))
+* 📺 **[노말 모드 시연 영상]** 청·장년층 고립 가구의 자발적 소통을 유도하는 게이미피케이션 콘텐츠 인터페이스 ([YouTube Shorts 보기](https://youtube.com/shorts/0ObgMYZ8k-M?si=bkCbKxT8UIx5nql8))
 
 <br>
 
 ## 🛠 기술 스택 (Tech Stack)
+
 ### Frontend
-- **Framework**: React 19, Vite
-- **Architecture**: Progressive Web App (PWA)
-- **State Management**: Zustand (오프라인 상태 대응)
-- **Design**: 모바일 친화적 파스텔톤 UI
-- **Hybrid App**: Capacitor (또는 React Native WebView)
+* **Framework & Build Tool**: React 19, Vite
+* **Architecture**: Progressive Web App (PWA) (Service Worker 기반 오프라인 지원)
+* **State Management**: Zustand (네트워크 단절 및 오프라인 상태 스토리지 대응)
+* **Design & UI**: Tailwind CSS 기반 모바일 친화적 파스텔톤 감성 UI, 채팅 UI 디자인
+* **Hybrid Packaging**: Capacitor / Android WebView 연동
 
 ### Backend
-- **Framework**: Spring Boot 3.x
-- **Database**: MySQL 
-- **ORM & Optimization**: Spring Data JPA (인덱스 기반 쿼리 최적화)
-- **Task Scheduling**: Spring `@Scheduled` (24h/48h 감지 코어)
-- **Notification**: JavaMailSender (DI 기반 알림 인터페이스)
+* **Framework**: Spring Boot 3.x, Python & FastAPI (MCP 기반 REST API 확장 설계)
+* **Database & ORM**: MySQL, Spring Data JPA / MyBatis (인덱스 기반 쿼리 최적화)
+* **Task Scheduling**: Spring `@Scheduled` (데몬 형태의 24h/48h 위기 감지 코어 파이프라인)
+* **Security**: Spring Security, JWT (Custom Claim 기반 이중 권한 제어)
+* **Notification**: JavaMailSender (DI 의존성 주입 기반 비상 알림 인터페이스 구축)
 
 <br>
 
 ## 👨‍💻 팀원 및 역할 분담 (R&R)
-| 이름 | 역할 | 주요 수행 내용 |
-|:---:|:---:|---|
-| **권영훈**<br>(팀장) | PM & PO & UI/UX | - 프로젝트 비전 수립 및 애자일(Agile) 스프린트 관리<br>- 사용자 모드(Easy/Normal) UX 시나리오 설계<br>- 카나리아 미션 및 게이미피케이션 기획 |
-| **이호준** | CTO & Architect | - 전체 시스템 아키텍처 및 통합 프로세스 설계<br>- 클라우드 배포(CI/CD) 및 서버 보안 취약점 점검<br>- Device Token 기반 인증 및 알림 인터페이스 설계 |
-| **강신혁** | Backend Developer | - Spring Boot 기반 RESTful API 비즈니스 로직 설계<br>- `@Scheduled` 활용 골든타임 감지 코어 알고리즘 개발<br>- JPA 활용 활동 로그 관리 및 대용량 쿼리 튜닝 |
-| **하유빈** | Frontend developer | - React/Vite 기반 모바일 친화적 UI 컴포넌트 개발<br>- 앱 설치 허들을 낮추는 PWA 환경 구축<br>- Zustand 활용 상태 관리 및 파스텔톤 디자인 설계 |
+본 연구팀은 모든 팀원이 프로젝트 전체 개발 사이클(기획, 설계, 백엔드, 프론트엔드, 배포 검토)을 유기적으로 공유하며 실제 서비스화 과정의 기술적 한계를 함께 극복하였습니다.
+
+| 성명(학번) | 역할 | 담당 업무 상세 |
+| :---: | :---: | --- |
+| **권영훈**<br>(20213032) | **Team Leader**<br>(PM / Arch) | • 프로젝트 총괄 및 Agile 스프린트 일정 관리<br>• 세대별 맞춤형 이중 UI(Easy/Normal) 및 UX 시나리오 기획<br>• 카나리아 미션 게이미피케이션 기획 및 학술대회 논문/결과보고서 문서화 주도 |
+| **이호준**<br>(20212995) | **Tech Lead**<br>(Infra / DevOps) | • AWS 클라우드 인프라 구축 및 무중단 배포 환경 수립<br>• GitHub 연동 기반의 CI/CD 자동화 파이프라인 관리 및 유지보수<br>• DB 스키마 설계, Device Token 기반 인증/FCM 알림 인터페이스 점검 및 서버 보안 계층 강화 |
+| **강신혁**<br>(20213059) | **Backend**<br>(Data / API) | • Spring Boot 기반 RESTful API 및 핵심 비즈니스 로직 구현<br>• 데몬 형태의 시계열 기반 위기 감지 엔지링 및 JPA 스케줄러 구현<br>• 대규모 스캔 연산 성능 방지를 위한 복합 인덱스 설정 및 DB 쿼리 튜닝, 학술대회 발표 |
+| **하유빈**<br>(20213061) | **Frontend**<br>(Frontend / UI) | • React 19 + Vite 기반의 고성능 컴포넌트 구조 구현 및 반응형 UI 설계<br>• Zustand 활용 전역 상태 관리 및 모바일 접근성 향상을 위한 무설치 PWA 환경 구축<br>• 파스텔톤 감성 UI/UX 구성 및 Capacitor 활용 모바일 하이브리드 패키징 검토 |
 
 <br>
 
-
 ## 📅 프로젝트 수행 기간
-- **2026. 03. 02 ~ 2026. 06. 22 (약 4개월)**
+* **2026. 03. 02 ~ 2026. 06. 22 (4개월)**
