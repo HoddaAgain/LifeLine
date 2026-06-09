@@ -68,10 +68,11 @@
 
 | 이지 모드 (Easy Mode) | 노말 모드 (Normal Mode) | 하루 일기 및 카나 미션 |
 | :---: | :---: | :---: |
-| ![이지 모드](https://github.com/user-attachments/assets/0f48488d-454c-4997-8b41-ac0ad78ed86e)  | ![노말 모드] | ![미션 및 일기] |
+|<img width="46" height="90" alt="Image" src="https://github.com/user-attachments/assets/0659ba07-7785-4d57-bd90-f677388248b3" />|<img width="46" height="90" alt="Image" src="https://github.com/user-attachments/assets/ef99c36e-8f45-4864-937f-b259c050cda1" />|<img width="46" height="90" alt="Image" src="https://github.com/user-attachments/assets/8b7bbc63-9579-470d-b5f3-1be71ef5d895" />|
+| [이지 모드]  | [노말 모드] | [하루 일기 및 카나 미션] |
 
 * 📺 **[이지 모드 시연 영상]** 고령층 및 디지털 취약계층을 위한 원터치 생존 신고 UI 구동 프로세스 ([YouTube Shorts 보기](https://youtube.com/shorts/ia3DMRVpRow?si=_TyP-ubURBuO2DY6))
-* 📺 **[노말 모드 시연 영상]** 청·장년층 고립 가구의 자발적 소통을 유도하는 게이미피케이션 콘텐츠 인터페이스 ([YouTube Shorts 보기](https://youtube.com/shorts/0ObgMYZ8k-M?si=bkCbKxT8UIx5nql8))
+* 📺 **[노말 모드 시연 영상]** 청·장년층 고립 가구의 자발적 소통을 유도하는 게이미피케이션 콘텐츠 ([YouTube Shorts 보기](https://youtube.com/shorts/0ObgMYZ8k-M?si=bkCbKxT8UIx5nql8))
 
 <br>
 
