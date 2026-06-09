@@ -1,5 +1,6 @@
 # LifeLine 🐤: 1인 가구를 위한 골든타임 확보 및 안전망 구축 플랫폼
 
+> **"감시를 넘어 교감으로, 1인 가구의 든든한 LifeLine 플랫폼"** <br>
 > **단순한 '사망 방지'를 넘어, '정서적 유대감'을 형성하는 1인 가구 골든타임 확보 플랫폼** <br>
 > 2026학년도 동의대학교 응용소프트웨어공학과 4학년 1학기 캡스톤 디자인II (팀명: 호따 - Hodda)
 
@@ -21,6 +22,11 @@
 기존 지자체 등에서 도입한 물리적 IoT 센서(움직임 감지, 전력량 체크 등)는 고립 가구에게 상시 '감시받고 있다'는 심리적 불쾌감과 이탈을 유발하며, 기계적인 AI 안부 전화 역시 일방적인 조사로 인식되어 수신을 방치하는 한계가 있었습니다.
 
 **LifeLine**은 이러한 문제를 해결하기 위해 사용자가 주체적이고 자발적으로 자신의 안전을 알리는 **'능동적 체크인(Active Check-in)'** 모델과 **게이미피케이션**을 도입하여 고독사 사각지대를 해소하는 실효성 있는 상시 모니터링 생태계를 제안합니다.
+
+### 📈 정량적 성과 목표 (Target Metrics)
+* **자발적 참여 및 유지율 (Engagement)**: 게이미피케이션 미션과 이지 UI를 통해 이탈률을 개선하고 플랫폼 도입 가구의 지속 이용 유지율 **90% 이상** 확립
+* **골든타임 감지 정확도 (Accuracy)**: 비활동 주기를 정밀 추적하여 24시간 경고, 48시간 위험 단계로 세분화한 골든타임 감지 알고리즘 정확도 **98% 이상** 달성 (오출동 비율 최소화)
+* **접근성 및 비용 효율성 (Accessibility)**: **PWA(Progressive Web App)** 방식으로 개발하여 앱 설치 장벽 0% 달성 및 고가 하드웨어 없는 저비용 표준 모델 제시
 
 <br>
 
@@ -60,7 +66,11 @@
 
 #### 2. Spring Security 기반 이중 권한 제어 도입 (보안성 강화)
 * **문제점**: 프론트엔드 단의 모드 제어에만 의존할 경우, 악의적인 API 우회 요청(이지 모드 사용자가 노말 모드 미션/일기 API에 직접 접근 등)에 취약할 수 있는 보안 맹점이 존재했습니다.
-* **해결 및 최적화**: 백엔드 API 라우터 진입 단계부터 `Spring Security Filter Chain`을 경유하도록 설정했습니다. JWT 인증 토큰 내에 포함된 Custom Claim(`user_mode`)을 파싱하여, '노말 모드 전용 기능'에 대한 이중 권한 검증(Authorization)을 수행함으로써 서버 측 방어 계층을 확층했습니다.
+* **해결 및 최적화**: 백엔드 API 라우터 진입 단계부터 `Spring Security Filter Chain`을 경유하도록 설정했습니다. JWT 인증 토큰 내에 포함된 Custom Claim(`user_mode`)을 파싱하여, '노말 모드 전용 기능'에 대한 이중 권한 검증(Authorization)을 수행함으로써 서버 측 방어 계층을 강화했습니다.
+
+#### 3. 영속성 데이터 일괄 자동 초기화 백그라운드 스케줄러 설계
+* **특징**: 서버 백그라운드에서 크론 표현식(`0 0 0 * * *`)을 활용하여 매일 자정 정각에 자동으로 트리거되는 일괄 처리(Batch) 프로세스를 구축했습니다.
+* **최적화 내용**: 전날 수행된 전 유저의 일일 미션 레코드를 데이터베이스에서 일괄 삭제(`deleteAll`)하여 불필요한 데이터 누적을 방지하고 성능을 최적화했습니다. 모든 연산은 `@Transactional` 어노테이션 하에 수행되어 예외 발생 시 안전하게 롤백되도록 무결성을 보장했습니다.
 
 <br>
 
@@ -68,8 +78,8 @@
 
 | 이지 모드 (Easy Mode) | 노말 모드 (Normal Mode) | 하루 일기 및 카나 미션 |
 | :---: | :---: | :---: |
-|<img width="46" height="90" alt="Image" src="https://github.com/user-attachments/assets/0659ba07-7785-4d57-bd90-f677388248b3" />|<img width="46" height="90" alt="Image" src="https://github.com/user-attachments/assets/ef99c36e-8f45-4864-937f-b259c050cda1" />|<img width="46" height="90" alt="Image" src="https://github.com/user-attachments/assets/8b7bbc63-9579-470d-b5f3-1be71ef5d895" />|
-| [이지 모드]  | [노말 모드] | [하루 일기 및 카나 미션] |
+| <img width="240" alt="Easy Mode" src="https://github.com/user-attachments/assets/0659ba07-7785-4d57-bd90-f677388248b3" /> | <img width="240" alt="Normal Mode" src="https://github.com/user-attachments/assets/ef99c36e-8f45-4864-937f-b259c050cda1" /> | <img width="240" alt="Missions" src="https://github.com/user-attachments/assets/8b7bbc63-9579-470d-b5f3-1be71ef5d895" /> |
+| [고령층 친화적 이지모드 원터치 UI] | [참여 유도형 노말모드 홈 UI] | [게이미피케이션 미션 및 일기장] |
 
 * 📺 **[이지 모드 시연 영상]** 고령층 및 디지털 취약계층을 위한 원터치 생존 신고 UI 구동 프로세스 ([YouTube Shorts 보기](https://youtube.com/shorts/ia3DMRVpRow?si=_TyP-ubURBuO2DY6))
 * 📺 **[노말 모드 시연 영상]** 청·장년층 고립 가구의 자발적 소통을 유도하는 게이미피케이션 콘텐츠 ([YouTube Shorts 보기](https://youtube.com/shorts/0ObgMYZ8k-M?si=bkCbKxT8UIx5nql8))
@@ -101,7 +111,7 @@
 | :---: | :---: | --- |
 | **권영훈**<br>(20213032) | **Team Leader**<br>(PM / Arch) | • 프로젝트 총괄 및 Agile 스프린트 일정 관리<br>• 세대별 맞춤형 이중 UI(Easy/Normal) 및 UX 시나리오 기획<br>• 카나리아 미션 게이미피케이션 기획 및 학술대회 논문/결과보고서 문서화 주도 |
 | **이호준**<br>(20212995) | **Tech Lead**<br>(Infra / DevOps) | • AWS 클라우드 인프라 구축 및 무중단 배포 환경 수립<br>• GitHub 연동 기반의 CI/CD 자동화 파이프라인 관리 및 유지보수<br>• DB 스키마 설계, Device Token 기반 인증/FCM 알림 인터페이스 점검 및 서버 보안 계층 강화 |
-| **강신혁**<br>(20213059) | **Backend**<br>(Data / API) | • Spring Boot 기반 RESTful API 및 핵심 비즈니스 로직 구현<br>• 데몬 형태의 시계열 기반 위기 감지 엔지링 및 JPA 스케줄러 구현<br>• 대규모 스캔 연산 성능 방지를 위한 복합 인덱스 설정 및 DB 쿼리 튜닝, 학술대회 발표 |
+| **강신혁**<br>(20213059) | **Backend**<br>(Data / API) | • Spring Boot 기반 RESTful API 및 핵심 비즈니스 로직 구현<br>• 데몬 형태의 시계열 기반 위기 감지 엔진 및 JPA 스케줄러 구현<br>• 대규모 스캔 연산 성능 향상을 위한 복합 인덱스 설정 및 DB 쿼리 튜닝, 학술대회 발표 |
 | **하유빈**<br>(20213061) | **Frontend**<br>(Frontend / UI) | • React 19 + Vite 기반의 고성능 컴포넌트 구조 구현 및 반응형 UI 설계<br>• Zustand 활용 전역 상태 관리 및 모바일 접근성 향상을 위한 무설치 PWA 환경 구축<br>• 파스텔톤 감성 UI/UX 구성 및 Capacitor 활용 모바일 하이브리드 패키징 검토 |
 
 <br>
