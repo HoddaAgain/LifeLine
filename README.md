@@ -116,7 +116,7 @@
 | 이지 모드 (Easy Mode) | 노말 모드 (Normal Mode) | 하루 일기 및 카나 미션 |
 | :---: | :---: | :---: |
 | <img width="374" height="740" alt="Image" src="https://github.com/user-attachments/assets/608910ba-6db4-4555-8ad5-b56847097727" /> | <img width="376" height="734" alt="Image" src="https://github.com/user-attachments/assets/f3bf4eeb-3b57-4325-9e25-a4b3fa074548" /> | <img width="378" height="736" alt="Image" src="https://github.com/user-attachments/assets/4858c3e9-33bb-4bf9-835a-4104504bde54" /> |
-| [고령층 친화적 이지모드 원터치 UI] | [참여 유도형 노말모드 홈 UI] | [게이미피케이션 미션 및 일기장] |
+| [고령층 친화적 이지모드 원터치 UI] | [참여 유도형 노말모드 UI] | [게이미피케이션 미션 및 일기장] |
 
 * 📺 **[이지 모드 시연 영상]** 고령층 및 디지털 취약계층을 위한 원터치 생존 신고 UI 구동 프로세스 ([YouTube Shorts 보기](https://youtube.com/shorts/ia3DMRVpRow?si=_TyP-ubURBuO2DY6))
 * 📺 **[노말 모드 시연 영상]** 청·장년층 고립 가구의 자발적 소통을 유도하는 게이미피케이션 콘텐츠 ([YouTube Shorts 보기](https://youtube.com/shorts/0ObgMYZ8k-M?si=bkCbKxT8UIx5nql8))
