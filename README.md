@@ -87,7 +87,7 @@
 * **1차 빌드 제출 (2025-05-26)**: Capacitor 기반 하이브리드 앱 패키징 후 내부 테스트 및 제품 트랙 검토 제출 완료 (`v1.0.0 (1)`)
 * **심사 결과**: 구글 플레이 가이드라인(정책, 보안 및 품질 기준 등) 검토 단계에서 최종 **'출시 불가(거부)'** 판정 수령 (`앱 상태: 출시 안됨`)
 
-| 구글 플레이 콘솔 심사 제출 | 최종 미출시 상태 확인 |
+| 구글 플레이 콘솔 심사 제출 | 미출시 상태 확인 |
 | :---: | :---: |
 | <img width="360" alt="App Review Submit" src="https://github.com/user-attachments/assets/68ceb19c-30cd-437b-823f-b3b28e59485a" /> | <img width="360" alt="App Status Not Published" src="https://github.com/user-attachments/assets/e37fe333-f20b-42eb-821a-937b88fdf7f0" /> |
 
