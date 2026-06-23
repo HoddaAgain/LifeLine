@@ -18,3 +18,5 @@ replay_pid34016.log
 hs_err_pid6988.log
 replay_pid6988.log
 lifeline-backend/gradle.properties
+lifeline-backend/repomix-output.xml
+lifeline-backend/.env
